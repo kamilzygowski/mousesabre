@@ -1,3 +1,6 @@
+"use strict";
+exports.__esModule = true;
+var constants_1 = require("./constants");
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -11,18 +14,15 @@ ctx.fillStyle = '#c7ecee';
 var nextFrameBegin = function () {
     ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 };
+var collision = function (cursor, enemy) {
+    var dx = cursor.x - enemy.x;
+    var dy = cursor.y - enemy.y;
+    var distance = Math.sqrt(dx * dx + dy * dy);
+    return distance;
+};
 /**
  * Canvas Rendering
  */
-var newEnemy = {
-    img: new Image(),
-    width: 40,
-    height: 40,
-    x: Math.floor(Math.random() * window.innerWidth),
-    y: 0,
-    speed: 2
-};
-newEnemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
 var playerCursor = {
     img: new Image(),
     width: 40,
@@ -30,7 +30,7 @@ var playerCursor = {
     x: 0,
     y: 0
 };
-playerCursor.img.src = 'https://i.postimg.cc/sDSjbD7K/mouse.png';
+playerCursor.img.src = constants_1.PLAYER.img;
 var gameRender = setInterval(function () {
     nextFrameBegin();
     // Track player cursor to update it's position
@@ -39,14 +39,15 @@ var gameRender = setInterval(function () {
         playerCursor.y = e.clientY;
     };
     interval++;
-    if (interval % 135 === 3) {
+    if (interval % 4 === 3) {
+        // Defining every enemy of this type
         var enemy = {
             img: new Image(),
             width: 40,
             height: 40,
-            x: Math.floor(Math.random() * window.innerWidth),
-            y: 0,
-            speed: 2
+            x: Math.floor((Math.random() * window.innerWidth - 50) + 50),
+            y: -50,
+            speed: 5
         };
         enemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
         enemies.push(enemy);
@@ -60,8 +61,12 @@ var gameRender = setInterval(function () {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
+        // If enemy collides with cursor
+        if (collision(playerCursor, element) <= element.width + element.height / 2) {
+            var index = enemies.indexOf(element);
+            enemies.splice(index, 1);
+        }
+        ;
     });
-    ctx.drawImage(newEnemy.img, newEnemy.x, newEnemy.y, newEnemy.width, newEnemy.height);
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-    newEnemy.y += newEnemy.speed;
 }, 1000 / 60);
