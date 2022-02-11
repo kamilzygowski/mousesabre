@@ -12,6 +12,7 @@ interface Enemy{
     height:number;
     x:number;
     y:number;
+    speed?:number;
 }
 
 const canvas: HTMLElement = document.getElementById('canvas');
@@ -21,9 +22,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let interval:number = 0;
+let enemies:[] = [];
 
-const mouseImg: HTMLImageElement = new Image(64, 64);
-mouseImg.src = 'https://i.postimg.cc/sDSjbD7K/mouse.png';
 ctx.fillStyle = '#c7ecee';
 
 
@@ -38,24 +38,60 @@ const nextFrameBegin = (): void => {
  * Canvas Rendering
  */
 
-setInterval((): void => {
+ const newEnemy:Enemy = {
+    img : new Image(),
+    width:40,
+    height:40,
+    x:Math.floor(Math.random() * window.innerWidth),
+    y:0,
+    speed:2
+}
+newEnemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
+
+const playerCursor:Cursor = {
+    img: new Image(),
+    width: 40,
+    height: 40,
+    x: 0,
+    y: 0,
+}
+playerCursor.img.src = 'https://i.postimg.cc/sDSjbD7K/mouse.png';
+
+const gameRender:NodeJS.Timer = setInterval((): void => {
     nextFrameBegin();
     
-    const newEnemy:Enemy = {
-        img : new Image(),
-        width:40,
-        height:40,
-        x:Math.floor(Math.random() * window.innerWidth),
-        y:0
-    }
-    interval++;
-    if(interval%1356){
-        console.log(newEnemy)
-        newEnemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
-    }
-    ctx.drawImage(newEnemy.img, newEnemy.x, newEnemy.y, newEnemy.width, newEnemy.height);
-    newEnemy.y++;
+    // Track player cursor to update it's position
     onmousemove = (e: MouseEvent): void => {
-        ctx.drawImage(mouseImg, e.clientX - mouseImg.width / 2, e.clientY - mouseImg.height / 2);
+        playerCursor.x = e.clientX;
+        playerCursor.y = e.clientY;
     }
+
+    interval++;
+    if(interval%135 === 3){
+        const enemy:Enemy = {
+            img : new Image(),
+            width:40,
+            height:40,
+            x:Math.floor(Math.random() * window.innerWidth),
+            y:0,
+            speed:2
+        }
+        enemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
+        enemies.push(enemy);
+        console.log(enemies)
+    }
+    enemies.forEach((element:any) => {
+        ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
+        element.y += element.speed;
+
+        // Enemy arrived to it's destination
+        if(element.y >= window.innerHeight){
+            const index = enemies.indexOf(element);
+            enemies.splice(index, 1);
+        }
+    });
+    ctx.drawImage(newEnemy.img, newEnemy.x, newEnemy.y, newEnemy.width, newEnemy.height);
+    ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
+    newEnemy.y += newEnemy.speed;
+
 }, 1000 / 60);
