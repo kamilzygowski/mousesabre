@@ -3,11 +3,21 @@ exports.__esModule = true;
 var constants_1 = require("./constants");
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = window.innerWidth - 5;
+canvas.height = window.innerHeight - 5;
 var interval = 0;
 var enemies = [];
+var trailsArray = new Array;
+var previousPlayerX, previousPlayerY;
 ctx.fillStyle = '#c7ecee';
+var playerCursor = {
+    img: new Image(),
+    width: 40,
+    height: 40,
+    x: 0,
+    y: 0
+};
+playerCursor.img.src = constants_1.PLAYER.imgEast;
 /**
  * Functions
  */
@@ -23,34 +33,38 @@ var collision = function (cursor, enemy) {
 /**
  * Canvas Rendering
  */
-var playerCursor = {
-    img: new Image(),
-    width: 40,
-    height: 40,
-    x: 0,
-    y: 0
-};
-playerCursor.img.src = constants_1.PLAYER.img;
 var gameRender = setInterval(function () {
     nextFrameBegin();
     // Track player cursor to update it's position
     onmousemove = function (e) {
+        if (e.clientX < previousPlayerX) {
+            playerCursor.img.src = constants_1.PLAYER.imgWest;
+        }
+        else if (e.clientX > previousPlayerX) {
+            playerCursor.img.src = constants_1.PLAYER.imgEast;
+        }
+        else {
+            playerCursor.img.src = constants_1.PLAYER.imgNorth;
+        }
         playerCursor.x = e.clientX;
         playerCursor.y = e.clientY;
+        // Saving previous mouse pos for above position checking
+        previousPlayerX = e.clientX;
+        previousPlayerY = e.clientY;
     };
     interval++;
-    if (interval % 4 === 3) {
+    if (interval % 12 === 3) {
         // Defining every enemy of this type
-        var enemy = {
+        var enemyLv1 = {
             img: new Image(),
-            width: 40,
-            height: 40,
-            x: Math.floor((Math.random() * window.innerWidth - 50) + 50),
-            y: -50,
-            speed: 5
+            width: constants_1.ENEMYLV1.width,
+            height: constants_1.ENEMYLV1.height,
+            x: Math.floor((Math.random() * window.innerWidth + 50) - 25),
+            y: constants_1.ENEMYLV1.y,
+            speed: constants_1.ENEMYLV1.speed
         };
-        enemy.img.src = 'https://i.postimg.cc/MZ05K17Q/enemy.png';
-        enemies.push(enemy);
+        enemyLv1.img.src = constants_1.ENEMYLV1.img;
+        enemies.push(enemyLv1);
         console.log(enemies);
     }
     enemies.forEach(function (element) {
@@ -62,11 +76,33 @@ var gameRender = setInterval(function () {
             enemies.splice(index, 1);
         }
         // If enemy collides with cursor
-        if (collision(playerCursor, element) <= element.width + element.height / 2) {
+        if (collision(playerCursor, element) <= element.width + element.height / 8) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
         ;
     });
+    /**
+     * Trail
+     */
+    var trail = {
+        img: new Image(),
+        x: playerCursor.x,
+        y: playerCursor.y,
+        width: constants_1.TRAIL.width,
+        height: constants_1.TRAIL.height
+    };
+    trail.img.src = constants_1.TRAIL.img;
+    trailsArray.push(trail);
+    trailsArray.forEach(function (element) {
+        ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
+    });
+    if (interval % 23 === 1) {
+        trailsArray.forEach(function (element) {
+            var index = trailsArray.indexOf(element);
+            trailsArray.splice(index, 1);
+        });
+    }
+    // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-}, 1000 / 60);
+}, 1000 / 120);
