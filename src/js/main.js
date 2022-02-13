@@ -5,11 +5,26 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth - 5;
 canvas.height = window.innerHeight - 5;
+var background = new Image();
+background.src = 'https://i.postimg.cc/rwnx5kTk/City3.png';
 var interval = 0;
 var enemies = [];
 var trailsArray = new Array;
 var previousPlayerX, previousPlayerY;
+var trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
+var trailPosX, trailPosY, trailWidth, trailHeight;
 ctx.fillStyle = '#c7ecee';
+var spawnRateStages = [
+    384,
+    192,
+    96,
+    48,
+    24,
+    12,
+    6,
+    3 // 128 enemies on screen
+];
+var spawnRate = 0;
 var playerCursor = {
     img: new Image(),
     width: 40,
@@ -22,7 +37,7 @@ playerCursor.img.src = constants_1.PLAYER.imgEast;
  * Functions
  */
 var nextFrameBegin = function () {
-    ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 };
 var collision = function (cursor, enemy) {
     var dx = cursor.x - enemy.x;
@@ -30,21 +45,42 @@ var collision = function (cursor, enemy) {
     var distance = Math.sqrt(dx * dx + dy * dy);
     return distance;
 };
+var drawAnim = function (x, y, width, height, src, framesNumber) {
+    var image = new Image();
+    image.src = src;
+    var thisFrame = Math.round(interval % (framesNumber * 10) / 10);
+    ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
+};
 /**
  * Canvas Rendering
  */
 var gameRender = setInterval(function () {
     nextFrameBegin();
-    // Track player cursor to update it's position
+    // Setup animations on every position change
     onmousemove = function (e) {
         if (e.clientX < previousPlayerX) {
             playerCursor.img.src = constants_1.PLAYER.imgWest;
+            trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
+            trailPosX = -38.5;
+            trailPosY = 30;
+            trailWidth = 85;
+            trailHeight = 20;
         }
         else if (e.clientX > previousPlayerX) {
             playerCursor.img.src = constants_1.PLAYER.imgEast;
+            trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
+            trailPosX = 100.5;
+            trailPosY = 30;
+            trailWidth = 85;
+            trailHeight = 20;
         }
         else {
             playerCursor.img.src = constants_1.PLAYER.imgNorth;
+            trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
+            trailPosX = -14;
+            trailPosY = 60;
+            trailWidth = 20;
+            trailHeight = 53;
         }
         playerCursor.x = e.clientX;
         playerCursor.y = e.clientY;
@@ -53,7 +89,20 @@ var gameRender = setInterval(function () {
         previousPlayerY = e.clientY;
     };
     interval++;
-    if (interval % 12 === 3) {
+    console.log(interval / 1000);
+    if (interval / 1000 > 0) {
+        spawnRate = spawnRateStages[0];
+    }
+    else if (interval / 1000 > 2) {
+        spawnRate = spawnRateStages[1];
+    }
+    else if (interval / 1000 > 4) {
+        spawnRate = spawnRateStages[2];
+    }
+    else if (interval / 1000 > 6) {
+        spawnRate = spawnRateStages[6];
+    }
+    if (interval % spawnRate === 3) {
         // Defining every enemy of this type
         var enemyLv1 = {
             img: new Image(),
@@ -95,9 +144,9 @@ var gameRender = setInterval(function () {
     trail.img.src = constants_1.TRAIL.img;
     trailsArray.push(trail);
     trailsArray.forEach(function (element) {
-        ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
+        drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     });
-    if (interval % 23 === 1) {
+    if (interval % 23 === 1 || interval % 23 === 2) {
         trailsArray.forEach(function (element) {
             var index = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);

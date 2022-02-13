@@ -8,8 +8,8 @@ exports.PLAYER = {
 };
 exports.TRAIL = {
     img: 'https://i.postimg.cc/wxmhPFsY/teleport3.png',
-    width: 50,
-    height: 50
+    width: 20,
+    height: 53
 };
 exports.ENEMYLV1 = {
     img: 'https://i.postimg.cc/MZ05K17Q/enemy.png',

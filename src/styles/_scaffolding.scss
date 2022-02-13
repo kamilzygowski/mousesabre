@@ -3,7 +3,8 @@ html {
   font-family: $font-family;
   color: $font-color;
   line-height: 1.4;
-  background: $background-color
+  background: $background-color;
+  overflow: hidden;
 }
 
 body{
