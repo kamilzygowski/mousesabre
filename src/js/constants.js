@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.ENEMYLV1 = exports.TRAIL = exports.PLAYER = void 0;
+exports.BACKGROUND = exports.ENEMYLV1 = exports.TRAIL = exports.PLAYER = void 0;
 exports.PLAYER = {
     imgEast: 'https://i.postimg.cc/9Ms2RcW0/player.png',
     imgNorth: 'https://i.postimg.cc/JnHVWSbL/player-North.png',
@@ -20,3 +20,4 @@ exports.ENEMYLV1 = {
     speed: 2.5,
     radius: 190
 };
+exports.BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';

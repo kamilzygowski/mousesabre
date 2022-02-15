@@ -17,3 +17,4 @@ export const ENEMYLV1 = {
     speed: 2.5,
     radius:190,
 }
+export const BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';

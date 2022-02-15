@@ -1,19 +1,24 @@
 "use strict";
 exports.__esModule = true;
 var constants_1 = require("./constants");
+var utils_1 = require("./utils");
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth - 5;
 canvas.height = window.innerHeight - 5;
 var background = new Image();
-background.src = 'https://i.postimg.cc/rwnx5kTk/City3.png';
+background.src = constants_1.BACKGROUND;
+// Helpers variables
+var correctPositionX = 0;
+var correctPositionY = 0;
 var interval = 0;
+var previousPlayerX, previousPlayerY;
 var enemies = [];
 var trailsArray = new Array;
-var previousPlayerX, previousPlayerY;
 var trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
 var trailPosX, trailPosY, trailWidth, trailHeight;
-ctx.fillStyle = '#c7ecee';
+var trailLeftBehind = new Image();
+trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
 var spawnRateStages = [
     384,
     192,
@@ -40,19 +45,13 @@ playerCursor.img.src = constants_1.PLAYER.imgEast;
 var nextFrameBegin = function () {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 };
-var AiMoveAway = function (creature, speed) {
-    if (playerCursor.x > creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+var AiMoveAway = function (player, creature, speed) {
+    if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
         creature.x -= speed;
     }
-    else if (playerCursor.x < creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+    else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
         creature.x += speed;
     }
-};
-var collision = function (cursor, enemy) {
-    var dx = cursor.x - enemy.x;
-    var dy = cursor.y - enemy.y;
-    var distance = Math.sqrt(dx * dx + dy * dy);
-    return distance;
 };
 var drawAnim = function (x, y, width, height, src, framesNumber) {
     var image = new Image();
@@ -67,29 +66,35 @@ var gameRender = setInterval(function () {
     nextFrameBegin();
     // Setup animations on every position change
     onmousemove = function (e) {
-        if (e.clientX < previousPlayerX) {
+        if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgWest;
             trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
             trailPosX = -38.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
+            correctPositionX = 20;
+            correctPositionY = 0;
         }
-        else if (e.clientX > previousPlayerX) {
+        else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgEast;
             trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
             trailPosX = 100.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
+            correctPositionX = 40;
+            correctPositionY = 0;
         }
-        else {
+        else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgNorth;
             trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
-            trailPosX = -14;
-            trailPosY = 60;
+            trailPosX = -16;
+            trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
+            correctPositionX = 0;
+            correctPositionY = 20;
         }
         // Update player position info
         playerCursor.x = e.clientX;
@@ -129,7 +134,7 @@ var gameRender = setInterval(function () {
     }
     enemies.forEach(function (element) {
         // Apply logic to enemy
-        AiMoveAway(element, 5);
+        AiMoveAway(playerCursor, element, 5);
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
         // Enemy arrived to it's destination
@@ -138,7 +143,7 @@ var gameRender = setInterval(function () {
             enemies.splice(index, 1);
         }
         // If enemy collides with cursor
-        if (collision(playerCursor, element) <= element.radius / 2) {
+        if ((0, utils_1.collision)(playerCursor, element) <= element.radius / 2) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
@@ -157,14 +162,19 @@ var gameRender = setInterval(function () {
     trail.img.src = constants_1.TRAIL.img;
     trailsArray.push(trail);
     trailsArray.forEach(function (element) {
-        drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
+        //drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
+        var getPosX = element.x - trailPosX;
+        var getPosY = element.y - trailPosY;
+        ctx.drawImage(trailLeftBehind, getPosX + correctPositionX, getPosY + correctPositionY, 20, 20);
     });
-    if (interval % 23 === 1 || interval % 23 === 2) {
+    if (interval % 23 === 1) {
         trailsArray.forEach(function (element) {
             var index = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);
         });
     }
+    // Drawn anim on top of the sword
+    drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 }, 1000 / 120);
