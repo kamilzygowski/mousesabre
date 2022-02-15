@@ -17,5 +17,6 @@ exports.ENEMYLV1 = {
     height: 100,
     x: 0,
     y: -50,
-    speed: 2.5
+    speed: 2.5,
+    radius: 190
 };

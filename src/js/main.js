@@ -25,6 +25,7 @@ var spawnRateStages = [
     3 // 128 enemies on screen
 ];
 var spawnRate = 0;
+// Create a data instance for our player
 var playerCursor = {
     img: new Image(),
     width: 40,
@@ -38,6 +39,14 @@ playerCursor.img.src = constants_1.PLAYER.imgEast;
  */
 var nextFrameBegin = function () {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
+};
+var AiMoveAway = function (creature, speed) {
+    if (playerCursor.x > creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+        creature.x -= speed;
+    }
+    else if (playerCursor.x < creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+        creature.x += speed;
+    }
 };
 var collision = function (cursor, enemy) {
     var dx = cursor.x - enemy.x;
@@ -82,6 +91,7 @@ var gameRender = setInterval(function () {
             trailWidth = 20;
             trailHeight = 53;
         }
+        // Update player position info
         playerCursor.x = e.clientX;
         playerCursor.y = e.clientY;
         // Saving previous mouse pos for above position checking
@@ -89,7 +99,7 @@ var gameRender = setInterval(function () {
         previousPlayerY = e.clientY;
     };
     interval++;
-    console.log(interval / 1000);
+    // Set enemies spawn speed by a certain amount of time
     if (interval / 1000 > 0) {
         spawnRate = spawnRateStages[0];
     }
@@ -110,13 +120,16 @@ var gameRender = setInterval(function () {
             height: constants_1.ENEMYLV1.height,
             x: Math.floor((Math.random() * window.innerWidth + 50) - 25),
             y: constants_1.ENEMYLV1.y,
-            speed: constants_1.ENEMYLV1.speed
+            speed: constants_1.ENEMYLV1.speed,
+            radius: constants_1.ENEMYLV1.radius
         };
         enemyLv1.img.src = constants_1.ENEMYLV1.img;
         enemies.push(enemyLv1);
-        console.log(enemies);
+        //console.log(enemies)
     }
     enemies.forEach(function (element) {
+        // Apply logic to enemy
+        AiMoveAway(element, 5);
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
         // Enemy arrived to it's destination
@@ -125,14 +138,14 @@ var gameRender = setInterval(function () {
             enemies.splice(index, 1);
         }
         // If enemy collides with cursor
-        if (collision(playerCursor, element) <= element.width + element.height / 8) {
+        if (collision(playerCursor, element) <= element.radius / 2) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
         ;
     });
     /**
-     * Trail
+     * Sword trail
      */
     var trail = {
         img: new Image(),

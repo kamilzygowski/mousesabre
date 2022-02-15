@@ -14,10 +14,11 @@ interface Enemy {
     height: number;
     x: number;
     y: number;
-    speed?: number;
+    speed: number;
+    radius: number;
 }
 
-const canvas: HTMLElement = document.getElementById('canvas');
+const canvas: any = document.getElementById('canvas');
 const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
 
 canvas.width = window.innerWidth - 5;
@@ -34,7 +35,7 @@ let trailPosX: number, trailPosY: number, trailWidth: number, trailHeight: numbe
 
 ctx.fillStyle = '#c7ecee';
 
-const spawnRateStages:Array<number> = [
+const spawnRateStages: Array<number> = [
     384, // 1 enemies on screen
     192, // 2 enemies on screen
     96, // 4 enemies on screen
@@ -44,7 +45,8 @@ const spawnRateStages:Array<number> = [
     6, // 64 enemies on screen
     3 // 128 enemies on screen
 ]
-let spawnRate:number = 0;
+let spawnRate: number = 0;
+// Create a data instance for our player
 const playerCursor: Cursor = {
     img: new Image(),
     width: 40,
@@ -59,13 +61,19 @@ playerCursor.img.src = PLAYER.imgEast;
  */
 const nextFrameBegin = (): void => {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
+}
 
+const AiMoveAway = (creature: Enemy, speed: number): void => {
+    if (playerCursor.x > creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+        creature.x -= speed;
+    } else if (playerCursor.x < creature.x && Math.abs(playerCursor.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+        creature.x += speed;
+    }
 }
 
 const collision = (cursor: any, enemy: any): number => {
     const dx: number = cursor.x - enemy.x;
     const dy: number = cursor.y - enemy.y;
-
     const distance: number = Math.sqrt(dx * dx + dy * dy);
     return distance;
 }
@@ -107,6 +115,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             trailWidth = 20;
             trailHeight = 53;
         }
+        // Update player position info
         playerCursor.x = e.clientX;
         playerCursor.y = e.clientY;
         // Saving previous mouse pos for above position checking
@@ -114,16 +123,16 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
         previousPlayerY = e.clientY;
     }
     interval++;
- 
-    console.log(interval/1000);
-    if(interval/1000 > 0){
-        spawnRate =spawnRateStages[0];
-    }else if (interval/1000 > 2){
-        spawnRate =spawnRateStages[1];
-    } else if (interval/1000 > 4){
-        spawnRate =spawnRateStages[2];
-    } else if (interval/1000 > 6){
-        spawnRate =spawnRateStages[6];
+
+    // Set enemies spawn speed by a certain amount of time
+    if (interval / 1000 > 0) {
+        spawnRate = spawnRateStages[0];
+    } else if (interval / 1000 > 2) {
+        spawnRate = spawnRateStages[1];
+    } else if (interval / 1000 > 4) {
+        spawnRate = spawnRateStages[2];
+    } else if (interval / 1000 > 6) {
+        spawnRate = spawnRateStages[6];
     }
     if (interval % spawnRate === 3) {
         // Defining every enemy of this type
@@ -133,13 +142,17 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             height: ENEMYLV1.height,
             x: Math.floor((Math.random() * window.innerWidth + 50) - 25), // -n +n makes enemies don't appear outside or semi outside of screen
             y: ENEMYLV1.y,
-            speed: ENEMYLV1.speed
+            speed: ENEMYLV1.speed,
+            radius: ENEMYLV1.radius
         }
         enemyLv1.img.src = ENEMYLV1.img;
         enemies.push(enemyLv1);
-        console.log(enemies)
+        //console.log(enemies)
     }
-    enemies.forEach((element: any) => {
+    enemies.forEach((element: Enemy) => {
+        // Apply logic to enemy
+        AiMoveAway(element, 5)
+
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
 
@@ -149,14 +162,14 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             enemies.splice(index, 1);
         }
         // If enemy collides with cursor
-        if (collision(playerCursor, element) <= element.width + element.height / 8) {
+        if (collision(playerCursor, element) <= element.radius / 2) {
             const index: number = enemies.indexOf(element);
             enemies.splice(index, 1);
         };
     });
 
     /**
-     * Trail
+     * Sword trail
      */
     const trail = {
         img: new Image(),
