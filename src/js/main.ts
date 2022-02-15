@@ -1,4 +1,4 @@
-import { BACKGROUND, ENEMYLV1, PLAYER, TRAIL } from "./constants";
+import { AITELEPORTIMG, BACKGROUND, ENEMYLV1, HPIMG, PLAYER, TRAIL } from "./constants";
 import { collision } from "./utils";
 
 interface Cursor {
@@ -17,6 +17,7 @@ interface Enemy {
     y: number;
     speed: number;
     radius: number;
+    mutation?: number;
 }
 
 const canvas: any = document.getElementById('canvas');
@@ -26,6 +27,7 @@ canvas.width = window.innerWidth - 5;
 canvas.height = window.innerHeight - 5;
 const background = new Image();
 background.src = BACKGROUND;
+let healthLeft: number = 5;
 
 // Helpers variables
 let correctPositionX = 0;
@@ -51,14 +53,15 @@ const spawnRateStages: Array<number> = [
     6, // 64 enemies on screen
     3 // 128 enemies on screen
 ]
-let spawnRate: number = 0;
+let spawnRate: number = 1;
 // Create a data instance for our player
 const playerCursor: Cursor = {
     img: new Image(),
     width: 40,
     height: 40,
-    x: 0,
-    y: 0,
+    // x and y basic state is -100 to not render image on canvas
+    x: -100,
+    y: -100,
 }
 playerCursor.img.src = PLAYER.imgEast;
 
@@ -69,13 +72,57 @@ const nextFrameBegin = (): void => {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 }
 
-const AiMoveAway = (player:Cursor ,creature: Enemy, speed: number): void => {
+const AiMoveAway = (player: Cursor, creature: Enemy, speed: number): void => {
     if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
         creature.x -= speed;
     } else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
         creature.x += speed;
     }
 }
+const AiCirlce = (creature: Enemy): void => {
+    //
+    setTimeout(() => {
+        creature.x = 170 * Math.sin(interval / 100)
+        creature.y = 170 * Math.cos(interval / 100)
+    }, 500);
+}
+
+const AiClone = (creature: Enemy): void => {
+    // 60% chance every sec to spawn copy
+    if (Math.floor(Math.random() * 200) === 1) {
+        let clone: Enemy = Object.create(creature)
+        // Randomly spawn copies on the random x axis positions of clone parent
+        if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
+            clone.x += Math.round(Math.random() * 30) + 25;
+            enemies.push(clone);
+        } else if (Math.round(Math.random() + 1) === 1 && creature.x > 90) {
+            clone.x -= Math.round(Math.random() * 30) + 25;
+            enemies.push(clone);
+        }
+    }
+}
+
+const AiTeleport = (player: Cursor, creature: Enemy): void => {
+    if (player.x > creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0 ||
+        player.x < creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+        const randomRange: number = Math.round(Math.random() * 400) - 200;
+        creature.x += randomRange;
+        const animate: NodeJS.Timer = setInterval(() => {
+            drawAnim(creature.x - 10, creature.y - 10, 128, 128, AITELEPORTIMG, 8)
+        }, 1000 / 120)
+        setTimeout(() => {
+            clearInterval(animate);
+        }, 450);
+    }
+}
+
+const AiRushDown = (creature: Enemy, speed: number) => {
+    drawAnim(creature.x, creature.y - 160, 128, 256, 'https://i.postimg.cc/pXVV7Hhy/rushdown.png', 4)
+    setTimeout(() => {
+        creature.y += speed;
+    }, 1500);
+}
+
 const drawAnim = (x: number, y: number, width: number, height: number, src: string, framesNumber: number): void => {
     let image: HTMLImageElement = new Image();
     image.src = src;
@@ -83,11 +130,30 @@ const drawAnim = (x: number, y: number, width: number, height: number, src: stri
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 
+const startGame = () => {
+    document.body.classList.add('hideCursor');
+}
+
+const gameOver = () => {
+    clearInterval(gameRender);
+    document.body.classList.remove('hideCursor');
+}
+
 /**
  * Canvas Rendering
  */
 const gameRender: NodeJS.Timer = setInterval((): void => {
     nextFrameBegin();
+
+    if (healthLeft < 1) {
+        gameOver();
+    }
+
+    // Interface player health info
+    ctx.fillStyle = '#b71540';
+    ctx.font = 'normal small-caps bold 48px serif';
+    drawAnim(50, 50, 64, 64, HPIMG, 5)
+    ctx.fillText(` x${healthLeft}`, 50 + 64, 50 + 48);
 
     // Setup animations on every position change
 
@@ -133,11 +199,11 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
 
     // Set enemies spawn speed by a certain amount of time
     if (interval / 1000 > 0) {
-        spawnRate = spawnRateStages[0];
-    } else if (interval / 1000 > 2) {
         spawnRate = spawnRateStages[1];
-    } else if (interval / 1000 > 4) {
+    } else if (interval / 1000 > 2) {
         spawnRate = spawnRateStages[2];
+    } else if (interval / 1000 > 4) {
+        spawnRate = spawnRateStages[3];
     } else if (interval / 1000 > 6) {
         spawnRate = spawnRateStages[6];
     }
@@ -150,23 +216,31 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             x: Math.floor((Math.random() * window.innerWidth + 50) - 25), // -n +n makes enemies don't appear outside or semi outside of screen
             y: ENEMYLV1.y,
             speed: ENEMYLV1.speed,
-            radius: ENEMYLV1.radius
+            radius: ENEMYLV1.radius,
+            mutation: Math.floor(Math.random() * 4) + 1,
         }
         enemyLv1.img.src = ENEMYLV1.img;
         enemies.push(enemyLv1);
-        //console.log(enemies)
     }
     enemies.forEach((element: Enemy) => {
         // Apply logic to enemy
-        AiMoveAway(playerCursor, element, 5)
-
+        switch (element.mutation) {
+            case 1: AiMoveAway(playerCursor, element, 5);
+                break;
+            case 2: AiClone(element);
+                break;
+            case 3: AiTeleport(playerCursor, element);
+                break;
+            case 4: AiRushDown(element, 20);
+                break;
+        }
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
-
         // Enemy arrived to it's destination
         if (element.y >= window.innerHeight) {
             const index: number = enemies.indexOf(element);
             enemies.splice(index, 1);
+            healthLeft--;
         }
         // If enemy collides with cursor
         if (collision(playerCursor, element) <= element.radius / 2) {
@@ -174,7 +248,6 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             enemies.splice(index, 1);
         };
     });
-
     /**
      * Sword trail
      */
@@ -186,8 +259,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
         height: TRAIL.height,
     }
     trail.img.src = TRAIL.img;
-    trailsArray.push(trail)
-
+    trailsArray.push(trail);
     trailsArray.forEach(element => {
         //drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
         const getPosX: number = element.x - trailPosX;
@@ -196,7 +268,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
 
 
     })
-    if (interval % 23 === 1) {
+    if (interval % 23 === 1 || interval % 23 === 2) {
         trailsArray.forEach((element) => {
             const index: number = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);
@@ -207,3 +279,5 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 }, 1000 / 120);
+
+startGame();

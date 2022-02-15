@@ -15,6 +15,11 @@ export const ENEMYLV1 = {
     x: 0,
     y: -50,
     speed: 2.5,
-    radius:190,
+    radius: 190,
 }
-export const BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';
+// Canvas background
+export const BACKGROUND = 'https://i.postimg.cc/1z6hwLWt/Purple-Nebula-3-1024x1024.png';
+//exports.BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';
+export const AITELEPORTIMG = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
+// User Interface
+export const HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';

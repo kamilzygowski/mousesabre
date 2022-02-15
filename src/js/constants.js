@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.BACKGROUND = exports.ENEMYLV1 = exports.TRAIL = exports.PLAYER = void 0;
+exports.HPIMG = exports.AITELEPORTIMG = exports.BACKGROUND = exports.ENEMYLV1 = exports.TRAIL = exports.PLAYER = void 0;
 exports.PLAYER = {
     imgEast: 'https://i.postimg.cc/9Ms2RcW0/player.png',
     imgNorth: 'https://i.postimg.cc/JnHVWSbL/player-North.png',
@@ -20,4 +20,9 @@ exports.ENEMYLV1 = {
     speed: 2.5,
     radius: 190
 };
-exports.BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';
+// Canvas background
+exports.BACKGROUND = 'https://i.postimg.cc/1z6hwLWt/Purple-Nebula-3-1024x1024.png';
+//exports.BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';
+exports.AITELEPORTIMG = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
+// User Interface
+exports.HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
