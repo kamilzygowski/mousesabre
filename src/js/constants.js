@@ -20,17 +20,9 @@ exports.ENEMYLV1 = {
     speed: 5.5,
     radius: 190
 };
-// Canvas background
 exports.BACKGROUND = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
-// User Interface
 exports.HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
-/**
- * Enemy Ai Animations/Imgs
- */
 exports.ENEMY_AI_RUSHDOWN = 'https://i.postimg.cc/pXVV7Hhy/rushdown.png';
 exports.ENEMY_AI_TELEPORT = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
-/**
- * Tails
- */
 exports.TAILS_BOTTOM = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 exports.TAILS_SIDE = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';

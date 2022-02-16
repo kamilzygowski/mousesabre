@@ -15,7 +15,6 @@ var bottomTile = new Image();
 bottomTile.src = constants_1.TAILS_BOTTOM;
 var backgroundTile = new Image();
 backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
-// Helpers variables
 var interval = 0;
 var previousPlayerX, previousPlayerY;
 var enemies = [];
@@ -32,22 +31,17 @@ var spawnRateStages = [
     24,
     12,
     6,
-    3 // 128 enemies on screen
+    3
 ];
 var spawnRate = 1;
-// Create a data instance for our player
 var playerCursor = {
     img: new Image(),
     width: 40,
     height: 40,
-    // x and y basic state is -100 to not render image on canvas
     x: -100,
     y: -100
 };
 playerCursor.img.src = constants_1.PLAYER.imgEast;
-/**
- * Functions
- */
 var nextFrameBegin = function () {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 };
@@ -60,17 +54,14 @@ var AiMoveAway = function (player, creature, speed) {
     }
 };
 var AiCirlce = function (creature) {
-    //
     setTimeout(function () {
         creature.x = 170 * Math.sin(interval / 100);
         creature.y = 170 * Math.cos(interval / 100);
     }, 500);
 };
 var AiClone = function (creature) {
-    // 60% chance every sec to spawn copy
     if (Math.floor(Math.random() * 200) === 1) {
         var clone = Object.create(creature);
-        // Randomly spawn copies on the random x axis positions of clone parent
         if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
             clone.x += Math.round(Math.random() * 30) + 25;
             enemies.push(clone);
@@ -123,7 +114,6 @@ var gameOver = function () {
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
-    // On button click reload page to the first locationUrl (to the main menu)
     menuButton.addEventListener('click', function () {
         location.href = MAIN_URL;
     });
@@ -131,14 +121,11 @@ var gameOver = function () {
 var initGameState = function () {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
-    // Make gamelook a bitsmaller on screen width > 1600
-    // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
     background.src = constants_1.BACKGROUND;
     canvas.addEventListener('contextmenu', function (e) {
         playerSkillSamuraiSlash();
-        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
         e.preventDefault();
     });
 };
@@ -149,10 +136,6 @@ var playerSkillSamuraiSlash = function () {
 var paintGrid = function (sqmSize) {
     grid.forEach(function (element, index) {
         element.forEach(function (elem, id) {
-            // Below comments checks if every squaremeter got correct position
-            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
-            //ctx.stroke()    
-            // Make barriers on left and right
             if (id === 0 || id === element.length - 1) {
                 ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
             }
@@ -160,26 +143,20 @@ var paintGrid = function (sqmSize) {
                 ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index);
             }
             else {
-                //ctx.drawImage(backgroundTile, sqmSize * id, sqmSize * index)
             }
         });
     });
 };
-/**
- * Canvas Rendering
- */
 var gameRendering = function () {
     nextFrameBegin();
     paintGrid(32);
     if (healthLeft < 1) {
         gameOver();
     }
-    // Interface player health info
     ctx.fillStyle = '#b71540';
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, constants_1.HPIMG, 5);
     ctx.fillText(" x " + healthLeft, 50 + 64, 50 + 48);
-    // Setup animations on every position change
     onmousemove = function (e) {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgWest;
@@ -205,16 +182,13 @@ var gameRendering = function () {
             trailWidth = 20;
             trailHeight = 53;
         }
-        // Update player position info
         playerCursor.x = e.clientX;
         playerCursor.y = e.clientY;
-        // Saving previous mouse pos for above position checking
         previousPlayerX = e.clientX;
         previousPlayerY = e.clientY;
         trailsArray.push(trail);
     };
     interval++;
-    // Set enemies spawn speed by a certain amount of time
     if (interval / 1000 > 0) {
         spawnRate = spawnRateStages[1];
     }
@@ -228,7 +202,6 @@ var gameRendering = function () {
         spawnRate = spawnRateStages[6];
     }
     if (interval % spawnRate === 3) {
-        // Defining every enemy of this type
         var enemyLv1 = {
             img: new Image(),
             width: constants_1.ENEMYLV1.width,
@@ -243,7 +216,6 @@ var gameRendering = function () {
         enemies.push(enemyLv1);
     }
     enemies.forEach(function (element) {
-        // Apply logic to enemy
         switch (element.mutation) {
             case 1:
                 AiMoveAway(playerCursor, element, 5);
@@ -260,24 +232,18 @@ var gameRendering = function () {
         }
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
-        // Enemy arrived to it's destination
         if (element.y >= window.innerHeight) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
-            // Don't count enemies who are out screen
             if (element.x > 0 && element.x < window.innerWidth)
                 healthLeft--;
         }
-        // If enemy collides with cursor
         if ((0, utils_1.collision)(playerCursor, element) <= element.radius / 2) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
         ;
     });
-    /**
-     * Sword trail
-     */
     var trail = {
         x: playerCursor.x,
         y: playerCursor.y,
@@ -286,7 +252,6 @@ var gameRendering = function () {
     };
     trailsArray.forEach(function (element) {
         ctx.beginPath();
-        // Getting random color to make trail looking more precious
         switch (Math.floor(Math.random() * 4 + 1)) {
             case 1:
                 ctx.strokeStyle = '#2ce8f5';
@@ -313,11 +278,8 @@ var gameRendering = function () {
             trailsArray.splice(index, 1);
         });
     }
-    // Drawn anim on top of the sword
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
-    // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 };
 var gameRender = setInterval(gameRendering, 1000 / 60);
 (0, utils_1.createGrid)(32, grid);
-// Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor
