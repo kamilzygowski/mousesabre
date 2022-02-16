@@ -13,5 +13,39 @@
   margin: auto;
 }
 
+
+.hideCursor{
+  cursor: none;
+}
+
+.hideCanvas{
+  display: none;
+}
+
+.title{
+  font-size:84px;
+}
+
+.startButton{
+  cursor: pointer;
+  font-size:48px;
+  color:rgb(0, 255, 0);
+  text-shadow: 1px 1px 2px red, 0 0 3em blue, 0 0 0.4em blue;
+
+  &:hover{
+    color:rgb(0, 82, 54);
+  }
+}
+
+.menuImage{
+  position:absolute;
+  margin:auto;
+  margin-top:-350px;
+  margin-left: -180px;
+  width:237px;
+  height: 800px;
+  z-index:-1;
+}
+
 @import 'variables';
 @import 'scaffolding';

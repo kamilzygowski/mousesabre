@@ -1,6 +1,6 @@
 html {
   font-size: $font-size;
-  font-family: $font-family;
+  font-family: 'Rakkas', cursive;
   color: $font-color;
   line-height: 1.4;
   background: $background-color;
@@ -8,9 +8,6 @@ html {
 }
 
 body{
-  margin: 0;
-}
-
-.hideCursor{
-  cursor: none;
+  margin:auto;
+  text-align: center;
 }

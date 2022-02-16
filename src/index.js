@@ -1,5 +1,6 @@
 // Test import of a JavaScript module
 import { main } from '@/js/main'
+import { menu } from '@/js/menu'
 
 // Test import of an asset
 import webpackLogo from '@/images/webpack-logo.svg'

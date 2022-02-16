@@ -1,14 +1,17 @@
 "use strict";
 exports.__esModule = true;
+exports.initGameState = exports.startGame = void 0;
 var constants_1 = require("./constants");
 var utils_1 = require("./utils");
-var canvas = document.getElementById('canvas');
-var ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth - 5;
-canvas.height = window.innerHeight - 5;
+var canvas;
+var ctx;
 var background = new Image();
-background.src = constants_1.BACKGROUND;
 var healthLeft = 5;
+var grid = [];
+var sideTile = new Image();
+sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
+var bottomTile = new Image();
+bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 // Helpers variables
 var correctPositionX = 0;
 var correctPositionY = 0;
@@ -105,15 +108,28 @@ var drawAnim = function (x, y, width, height, src, framesNumber) {
 var startGame = function () {
     document.body.classList.add('hideCursor');
 };
+exports.startGame = startGame;
 var gameOver = function () {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
 };
+var initGameState = function () {
+    canvas = document.getElementById('canvas');
+    //canvas.classList.remove('hideCanvas');
+    ctx = canvas.getContext('2d');
+    // Make gamelook a bitsmaller on screen width > 1600
+    // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
+    canvas.width = window.innerWidth - 5;
+    canvas.height = window.innerHeight - 5;
+    background.src = constants_1.BACKGROUND;
+};
+exports.initGameState = initGameState;
 /**
  * Canvas Rendering
  */
 var gameRender = setInterval(function () {
     nextFrameBegin();
+    paintGreed(32);
     if (healthLeft < 1) {
         gameOver();
     }
@@ -212,7 +228,9 @@ var gameRender = setInterval(function () {
         if (element.y >= window.innerHeight) {
             var index = enemies.indexOf(element);
             enemies.splice(index, 1);
-            healthLeft--;
+            // Don't count enemies who are out screen
+            if (element.x > 0 && element.x < window.innerWidth)
+                healthLeft--;
         }
         // If enemy collides with cursor
         if ((0, utils_1.collision)(playerCursor, element) <= element.radius / 2) {
@@ -234,7 +252,6 @@ var gameRender = setInterval(function () {
     trail.img.src = constants_1.TRAIL.img;
     trailsArray.push(trail);
     trailsArray.forEach(function (element) {
-        //drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
         var getPosX = element.x - trailPosX;
         var getPosY = element.y - trailPosY;
         ctx.drawImage(trailLeftBehind, getPosX + correctPositionX, getPosY + correctPositionY, 20, 20);
@@ -249,5 +266,35 @@ var gameRender = setInterval(function () {
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-}, 1000 / 120);
-startGame();
+}, 1000 / 60);
+var createGrid = function (sqmSize) {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var gridX = Math.ceil(width / sqmSize);
+    var gridY = Math.ceil(height / sqmSize);
+    for (var i = 0; i < gridY; i++) {
+        var newRow = Array.from(Array(gridX));
+        for (var y = 0; y < newRow.length; y++) {
+            newRow[y] = 0;
+        }
+        grid.push(newRow);
+    }
+    console.log(grid);
+};
+createGrid(32);
+var paintGreed = function (sqmSize) {
+    grid.forEach(function (element, index) {
+        element.forEach(function (elem, id) {
+            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
+            //ctx.stroke()    
+            // Make barriers on left and right
+            if (id === 0 || id === element.length - 1) {
+                ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
+            }
+            if (index === grid.length - 2) {
+                ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index);
+            }
+        });
+    });
+};
+// Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor

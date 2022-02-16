@@ -14,7 +14,7 @@ export const ENEMYLV1 = {
     height: 100,
     x: 0,
     y: -50,
-    speed: 2.5,
+    speed: 5.5,
     radius: 190,
 }
 // Canvas background

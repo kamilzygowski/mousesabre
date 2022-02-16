@@ -8,7 +8,6 @@ interface Cursor {
     x?: number;
     y?: number;
 }
-
 interface Enemy {
     img: HTMLImageElement;
     width: number;
@@ -19,15 +18,24 @@ interface Enemy {
     radius: number;
     mutation?: number;
 }
+interface Trail {
+    img: HTMLImageElement;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
-const canvas: any = document.getElementById('canvas');
-const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
-
-canvas.width = window.innerWidth - 5;
-canvas.height = window.innerHeight - 5;
+let canvas: any;
+let ctx: CanvasRenderingContext2D;
 const background = new Image();
-background.src = BACKGROUND;
 let healthLeft: number = 5;
+let grid:Array<[]> = [];
+
+const sideTile:HTMLImageElement = new Image();
+sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
+const bottomTile:HTMLImageElement = new Image();
+bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 
 // Helpers variables
 let correctPositionX = 0;
@@ -130,13 +138,24 @@ const drawAnim = (x: number, y: number, width: number, height: number, src: stri
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 
-const startGame = () => {
+export const startGame = ():void => {
     document.body.classList.add('hideCursor');
 }
 
-const gameOver = () => {
+const gameOver = ():void => {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
+}
+
+export const initGameState = ():void => {
+    canvas = document.getElementById('canvas');
+    //canvas.classList.remove('hideCanvas');
+    ctx = canvas.getContext('2d');
+    // Make gamelook a bitsmaller on screen width > 1600
+    // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
+    canvas.width = window.innerWidth - 5;
+    canvas.height = window.innerHeight - 5;
+    background.src = BACKGROUND;  
 }
 
 /**
@@ -144,6 +163,8 @@ const gameOver = () => {
  */
 const gameRender: NodeJS.Timer = setInterval((): void => {
     nextFrameBegin();
+
+    paintGreed(32);
 
     if (healthLeft < 1) {
         gameOver();
@@ -240,6 +261,8 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
         if (element.y >= window.innerHeight) {
             const index: number = enemies.indexOf(element);
             enemies.splice(index, 1);
+            // Don't count enemies who are out screen
+            if(element.x > 0 && element.x < window.innerWidth)
             healthLeft--;
         }
         // If enemy collides with cursor
@@ -251,7 +274,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     /**
      * Sword trail
      */
-    const trail = {
+    const trail:Trail = {
         img: new Image(),
         x: playerCursor.x,
         y: playerCursor.y,
@@ -261,12 +284,9 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     trail.img.src = TRAIL.img;
     trailsArray.push(trail);
     trailsArray.forEach(element => {
-        //drawAnim(element.x - trailPosX, element.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
         const getPosX: number = element.x - trailPosX;
         const getPosY: number = element.y - trailPosY;
         ctx.drawImage(trailLeftBehind, getPosX + correctPositionX, getPosY + correctPositionY, 20, 20)
-
-
     })
     if (interval % 23 === 1 || interval % 23 === 2) {
         trailsArray.forEach((element) => {
@@ -278,6 +298,43 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-}, 1000 / 120);
+}, 1000 / 60);
 
-startGame();
+const createGrid = (sqmSize:number):void => {
+    let width:number = window.innerWidth;
+    let height:number = window.innerHeight;
+    let gridX = Math.ceil(width/sqmSize);
+    let gridY = Math.ceil(height/sqmSize);
+
+    for(let i = 0; i < gridY; i++){
+        const newRow:Array<number> = Array.from(Array(gridX))
+        for(let y = 0; y < newRow.length; y++){
+            newRow[y] = 0;
+        }
+        grid.push(newRow)
+    }
+
+    console.log(grid)
+
+}
+
+createGrid(32);
+
+const paintGreed = (sqmSize:number):void => {
+    grid.forEach((element, index)=> {
+        element.forEach((elem, id)=>{
+            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
+            //ctx.stroke()    
+
+            // Make barriers on left and right
+            if(id ===0 || id === element.length - 1){
+                ctx.drawImage(sideTile, sqmSize*id, sqmSize * index)
+            }
+            if(index === grid.length-2){
+                ctx.drawImage(bottomTile, sqmSize*id, sqmSize * index)
+            }
+        })
+    })
+}
+
+// Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor
