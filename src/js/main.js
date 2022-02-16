@@ -13,8 +13,6 @@ sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
 var bottomTile = new Image();
 bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 // Helpers variables
-var correctPositionX = 0;
-var correctPositionY = 0;
 var interval = 0;
 var previousPlayerX, previousPlayerY;
 var enemies = [];
@@ -115,7 +113,6 @@ var gameOver = function () {
 };
 var initGameState = function () {
     canvas = document.getElementById('canvas');
-    //canvas.classList.remove('hideCanvas');
     ctx = canvas.getContext('2d');
     // Make gamelook a bitsmaller on screen width > 1600
     // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
@@ -124,6 +121,22 @@ var initGameState = function () {
     background.src = constants_1.BACKGROUND;
 };
 exports.initGameState = initGameState;
+var paintGreed = function (sqmSize) {
+    grid.forEach(function (element, index) {
+        element.forEach(function (elem, id) {
+            // Below comments checks if every squaremeter got correct position
+            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
+            //ctx.stroke()    
+            // Make barriers on left and right
+            if (id === 0 || id === element.length - 1) {
+                ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
+            }
+            if (index === grid.length - 2) {
+                ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index);
+            }
+        });
+    });
+};
 /**
  * Canvas Rendering
  */
@@ -147,8 +160,6 @@ var gameRender = setInterval(function () {
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
-            correctPositionX = 20;
-            correctPositionY = 0;
         }
         else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgEast;
@@ -157,8 +168,6 @@ var gameRender = setInterval(function () {
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
-            correctPositionX = 40;
-            correctPositionY = 0;
         }
         else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = constants_1.PLAYER.imgNorth;
@@ -167,8 +176,6 @@ var gameRender = setInterval(function () {
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
-            correctPositionX = 0;
-            correctPositionY = 20;
         }
         // Update player position info
         playerCursor.x = e.clientX;
@@ -176,6 +183,7 @@ var gameRender = setInterval(function () {
         // Saving previous mouse pos for above position checking
         previousPlayerX = e.clientX;
         previousPlayerY = e.clientY;
+        trailsArray.push(trail);
     };
     interval++;
     // Set enemies spawn speed by a certain amount of time
@@ -243,18 +251,32 @@ var gameRender = setInterval(function () {
      * Sword trail
      */
     var trail = {
-        img: new Image(),
         x: playerCursor.x,
         y: playerCursor.y,
         width: constants_1.TRAIL.width,
         height: constants_1.TRAIL.height
     };
-    trail.img.src = constants_1.TRAIL.img;
-    trailsArray.push(trail);
     trailsArray.forEach(function (element) {
-        var getPosX = element.x - trailPosX;
-        var getPosY = element.y - trailPosY;
-        ctx.drawImage(trailLeftBehind, getPosX + correctPositionX, getPosY + correctPositionY, 20, 20);
+        ctx.beginPath();
+        // Getting random color to make trail looking more precious
+        switch (Math.floor(Math.random() * 4 + 1)) {
+            case 1:
+                ctx.strokeStyle = '#2ce8f5';
+                break;
+            case 2:
+                ctx.strokeStyle = '#0099db';
+                break;
+            case 3:
+                ctx.strokeStyle = '#fff';
+                break;
+            case 4: ctx.strokeStyle = '#7b2cf5';
+        }
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20));
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 + (Math.random() * 40 - 20));
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.stroke();
     });
     if (interval % 23 === 1 || interval % 23 === 2) {
         trailsArray.forEach(function (element) {
@@ -267,34 +289,5 @@ var gameRender = setInterval(function () {
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 }, 1000 / 60);
-var createGrid = function (sqmSize) {
-    var width = window.innerWidth;
-    var height = window.innerHeight;
-    var gridX = Math.ceil(width / sqmSize);
-    var gridY = Math.ceil(height / sqmSize);
-    for (var i = 0; i < gridY; i++) {
-        var newRow = Array.from(Array(gridX));
-        for (var y = 0; y < newRow.length; y++) {
-            newRow[y] = 0;
-        }
-        grid.push(newRow);
-    }
-    console.log(grid);
-};
-createGrid(32);
-var paintGreed = function (sqmSize) {
-    grid.forEach(function (element, index) {
-        element.forEach(function (elem, id) {
-            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
-            //ctx.stroke()    
-            // Make barriers on left and right
-            if (id === 0 || id === element.length - 1) {
-                ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
-            }
-            if (index === grid.length - 2) {
-                ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index);
-            }
-        });
-    });
-};
+(0, utils_1.createGrid)(32, grid);
 // Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor

@@ -1,5 +1,5 @@
 import { AITELEPORTIMG, BACKGROUND, ENEMYLV1, HPIMG, PLAYER, TRAIL } from "./constants";
-import { collision } from "./utils";
+import { collision, createGrid } from "./utils";
 
 interface Cursor {
     img: HTMLImageElement;
@@ -19,7 +19,7 @@ interface Enemy {
     mutation?: number;
 }
 interface Trail {
-    img: HTMLImageElement;
+    img?: HTMLImageElement;
     x: number;
     y: number;
     width: number;
@@ -30,16 +30,14 @@ let canvas: any;
 let ctx: CanvasRenderingContext2D;
 const background = new Image();
 let healthLeft: number = 5;
-let grid:Array<[]> = [];
+let grid: Array<[]> = [];
 
-const sideTile:HTMLImageElement = new Image();
+const sideTile: HTMLImageElement = new Image();
 sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
-const bottomTile:HTMLImageElement = new Image();
+const bottomTile: HTMLImageElement = new Image();
 bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 
 // Helpers variables
-let correctPositionX = 0;
-let correctPositionY = 0;
 let interval: number = 0;
 let previousPlayerX: number, previousPlayerY: number;
 
@@ -124,7 +122,7 @@ const AiTeleport = (player: Cursor, creature: Enemy): void => {
     }
 }
 
-const AiRushDown = (creature: Enemy, speed: number) => {
+const AiRushDown = (creature: Enemy, speed: number): void => {
     drawAnim(creature.x, creature.y - 160, 128, 256, 'https://i.postimg.cc/pXVV7Hhy/rushdown.png', 4)
     setTimeout(() => {
         creature.y += speed;
@@ -138,38 +136,49 @@ const drawAnim = (x: number, y: number, width: number, height: number, src: stri
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 
-export const startGame = ():void => {
+export const startGame = (): void => {
     document.body.classList.add('hideCursor');
 }
 
-const gameOver = ():void => {
+const gameOver = (): void => {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
 }
 
-export const initGameState = ():void => {
+export const initGameState = (): void => {
     canvas = document.getElementById('canvas');
-    //canvas.classList.remove('hideCanvas');
     ctx = canvas.getContext('2d');
     // Make gamelook a bitsmaller on screen width > 1600
     // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
-    background.src = BACKGROUND;  
+    background.src = BACKGROUND;
 }
-
+const paintGreed = (sqmSize: number): void => {
+    grid.forEach((element: [], index: number): void => {
+        element.forEach((elem: object, id: number): void => {
+            // Below comments checks if every squaremeter got correct position
+            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
+            //ctx.stroke()    
+            // Make barriers on left and right
+            if (id === 0 || id === element.length - 1) {
+                ctx.drawImage(sideTile, sqmSize * id, sqmSize * index)
+            }
+            if (index === grid.length - 2) {
+                ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index)
+            }
+        })
+    })
+}
 /**
  * Canvas Rendering
  */
 const gameRender: NodeJS.Timer = setInterval((): void => {
     nextFrameBegin();
-
     paintGreed(32);
-
     if (healthLeft < 1) {
         gameOver();
     }
-
     // Interface player health info
     ctx.fillStyle = '#b71540';
     ctx.font = 'normal small-caps bold 48px serif';
@@ -177,7 +186,6 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     ctx.fillText(` x${healthLeft}`, 50 + 64, 50 + 48);
 
     // Setup animations on every position change
-
     onmousemove = (e: MouseEvent): void => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgWest;
@@ -186,9 +194,6 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
-            correctPositionX = 20;
-            correctPositionY = 0;
-
         } else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgEast;
             trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
@@ -196,8 +201,6 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
-            correctPositionX = 40;
-            correctPositionY = 0;
         } else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgNorth;
             trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
@@ -205,8 +208,6 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
-            correctPositionX = 0;
-            correctPositionY = 20;
         }
         // Update player position info
         playerCursor.x = e.clientX;
@@ -214,10 +215,10 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
         // Saving previous mouse pos for above position checking
         previousPlayerX = e.clientX;
         previousPlayerY = e.clientY;
+
+        trailsArray.push(trail);
     }
-
     interval++;
-
     // Set enemies spawn speed by a certain amount of time
     if (interval / 1000 > 0) {
         spawnRate = spawnRateStages[1];
@@ -262,8 +263,8 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
             const index: number = enemies.indexOf(element);
             enemies.splice(index, 1);
             // Don't count enemies who are out screen
-            if(element.x > 0 && element.x < window.innerWidth)
-            healthLeft--;
+            if (element.x > 0 && element.x < window.innerWidth)
+                healthLeft--;
         }
         // If enemy collides with cursor
         if (collision(playerCursor, element) <= element.radius / 2) {
@@ -274,22 +275,33 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     /**
      * Sword trail
      */
-    const trail:Trail = {
-        img: new Image(),
+    const trail: Trail = {
         x: playerCursor.x,
         y: playerCursor.y,
         width: TRAIL.width,
         height: TRAIL.height,
     }
-    trail.img.src = TRAIL.img;
-    trailsArray.push(trail);
-    trailsArray.forEach(element => {
-        const getPosX: number = element.x - trailPosX;
-        const getPosY: number = element.y - trailPosY;
-        ctx.drawImage(trailLeftBehind, getPosX + correctPositionX, getPosY + correctPositionY, 20, 20)
+    trailsArray.forEach((element: Trail) => {
+        ctx.beginPath();
+        // Getting random color to make trail looking more precious
+        switch (Math.floor(Math.random() * 4 + 1)) {
+            case 1: ctx.strokeStyle = '#2ce8f5';
+                break;
+            case 2: ctx.strokeStyle = '#0099db';
+                break;
+            case 3: ctx.strokeStyle = '#fff';
+                break;
+            case 4: ctx.strokeStyle = '#7b2cf5';
+        }
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20))
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 + (Math.random() * 40 - 20))
+        ctx.lineTo(element.x, element.y - 25);
+        ctx.stroke();
     })
     if (interval % 23 === 1 || interval % 23 === 2) {
-        trailsArray.forEach((element) => {
+        trailsArray.forEach((element: Trail) => {
             const index: number = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);
         })
@@ -299,42 +311,5 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 }, 1000 / 60);
-
-const createGrid = (sqmSize:number):void => {
-    let width:number = window.innerWidth;
-    let height:number = window.innerHeight;
-    let gridX = Math.ceil(width/sqmSize);
-    let gridY = Math.ceil(height/sqmSize);
-
-    for(let i = 0; i < gridY; i++){
-        const newRow:Array<number> = Array.from(Array(gridX))
-        for(let y = 0; y < newRow.length; y++){
-            newRow[y] = 0;
-        }
-        grid.push(newRow)
-    }
-
-    console.log(grid)
-
-}
-
-createGrid(32);
-
-const paintGreed = (sqmSize:number):void => {
-    grid.forEach((element, index)=> {
-        element.forEach((elem, id)=>{
-            //ctx.rect(sqmSize*id, sqmSize * index, sqmSize, sqmSize)
-            //ctx.stroke()    
-
-            // Make barriers on left and right
-            if(id ===0 || id === element.length - 1){
-                ctx.drawImage(sideTile, sqmSize*id, sqmSize * index)
-            }
-            if(index === grid.length-2){
-                ctx.drawImage(bottomTile, sqmSize*id, sqmSize * index)
-            }
-        })
-    })
-}
-
+createGrid(32, grid);
 // Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor
