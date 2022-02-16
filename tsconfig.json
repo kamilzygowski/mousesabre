@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "watch": true,
+        "skipLibCheck": true,
+        "moduleResolution": "node",
+        "removeComments": true,
+        "module": "esnext"
+    }
+}

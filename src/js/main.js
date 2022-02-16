@@ -1,29 +1,26 @@
-"use strict";
-exports.__esModule = true;
-exports.initGameState = exports.startGame = void 0;
-var constants_1 = require("./constants");
-var utils_1 = require("./utils");
-var canvas;
-var ctx;
-var background = new Image();
-var healthLeft = 5;
-var grid = [];
-var MAIN_URL = location.href;
-var sideTile = new Image();
-sideTile.src = constants_1.TAILS_SIDE;
-var bottomTile = new Image();
-bottomTile.src = constants_1.TAILS_BOTTOM;
-var backgroundTile = new Image();
+import { BACKGROUND, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
+import { collision, createGrid } from "./utils";
+let canvas;
+let ctx;
+const background = new Image();
+let healthLeft = 5;
+let grid = [];
+const MAIN_URL = location.href;
+const sideTile = new Image();
+sideTile.src = TAILS_SIDE;
+const bottomTile = new Image();
+bottomTile.src = TAILS_BOTTOM;
+const backgroundTile = new Image();
 backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
-var interval = 0;
-var previousPlayerX, previousPlayerY;
-var enemies = [];
-var trailsArray = new Array;
-var trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
-var trailPosX, trailPosY, trailWidth, trailHeight;
-var trailLeftBehind = new Image();
+let interval = 0;
+let previousPlayerX, previousPlayerY;
+const enemies = [];
+const trailsArray = new Array;
+let trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
+let trailPosX, trailPosY, trailWidth, trailHeight;
+const trailLeftBehind = new Image();
 trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
-var spawnRateStages = [
+const spawnRateStages = [
     384,
     192,
     96,
@@ -33,19 +30,19 @@ var spawnRateStages = [
     6,
     3
 ];
-var spawnRate = 1;
-var playerCursor = {
+let spawnRate = 1;
+const playerCursor = {
     img: new Image(),
     width: 40,
     height: 40,
     x: -100,
-    y: -100
+    y: -100,
 };
-playerCursor.img.src = constants_1.PLAYER.imgEast;
-var nextFrameBegin = function () {
+playerCursor.img.src = PLAYER.imgEast;
+const nextFrameBegin = () => {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 };
-var AiMoveAway = function (player, creature, speed) {
+const AiMoveAway = (player, creature, speed) => {
     if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
         creature.x -= speed;
     }
@@ -53,15 +50,15 @@ var AiMoveAway = function (player, creature, speed) {
         creature.x += speed;
     }
 };
-var AiCirlce = function (creature) {
-    setTimeout(function () {
+const AiCirlce = (creature) => {
+    setTimeout(() => {
         creature.x = 170 * Math.sin(interval / 100);
         creature.y = 170 * Math.cos(interval / 100);
     }, 500);
 };
-var AiClone = function (creature) {
+const AiClone = (creature) => {
     if (Math.floor(Math.random() * 200) === 1) {
-        var clone = Object.create(creature);
+        let clone = Object.create(creature);
         if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
             clone.x += Math.round(Math.random() * 30) + 25;
             enemies.push(clone);
@@ -72,70 +69,68 @@ var AiClone = function (creature) {
         }
     }
 };
-var AiTeleport = function (player, creature) {
+const AiTeleport = (player, creature) => {
     if (player.x > creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0 ||
         player.x < creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-        var randomRange = Math.round(Math.random() * 400) - 200;
+        const randomRange = Math.round(Math.random() * 400) - 200;
         creature.x += randomRange;
-        var animate_1 = setInterval(function () {
-            drawAnim(creature.x - 10, creature.y - 10, 128, 128, constants_1.ENEMY_AI_TELEPORT, 8);
+        const animate = setInterval(() => {
+            drawAnim(creature.x - 10, creature.y - 10, 128, 128, ENEMY_AI_TELEPORT, 8);
         }, 1000 / 120);
-        setTimeout(function () {
-            clearInterval(animate_1);
+        setTimeout(() => {
+            clearInterval(animate);
         }, 450);
     }
 };
-var AiRushDown = function (creature, speed) {
-    drawAnim(creature.x, creature.y - 160, 128, 256, constants_1.ENEMY_AI_RUSHDOWN, 4);
-    setTimeout(function () {
+const AiRushDown = (creature, speed) => {
+    drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4);
+    setTimeout(() => {
         creature.y += speed;
     }, 1500);
 };
-var drawAnim = function (x, y, width, height, src, framesNumber) {
-    var image = new Image();
+const drawAnim = (x, y, width, height, src, framesNumber) => {
+    let image = new Image();
     image.src = src;
-    var thisFrame = Math.round(interval % (framesNumber * 10) / 10);
+    const thisFrame = Math.round(interval % (framesNumber * 10) / 10);
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 };
-var startGame = function () {
+export const startGame = () => {
     document.body.classList.add('hideCursor');
 };
-exports.startGame = startGame;
-var gameOver = function () {
+const gameOver = () => {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
     document.body.innerHTML = '';
-    var gameOverTag = document.createElement('h1');
+    const gameOverTag = document.createElement('h1');
     gameOverTag.textContent = 'GAME OVER';
     gameOverTag.classList.add('gameOverText');
     canvas.style = 'display:none;';
     document.body.appendChild(gameOverTag);
-    var menuButton = document.createElement('button');
+    const menuButton = document.createElement('button');
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
-    menuButton.addEventListener('click', function () {
+    menuButton.addEventListener('click', () => {
         location.href = MAIN_URL;
     });
 };
-var initGameState = function () {
+export const initGameState = () => {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
-    background.src = constants_1.BACKGROUND;
-    canvas.addEventListener('contextmenu', function (e) {
+    background.src = BACKGROUND;
+    canvas.addEventListener('contextmenu', (e) => {
         playerSkillSamuraiSlash();
         e.preventDefault();
     });
 };
-exports.initGameState = initGameState;
-var playerSkillSamuraiSlash = function () {
+const playerSkillSamuraiSlash = () => {
     console.log('o');
 };
-var paintGrid = function (sqmSize) {
-    grid.forEach(function (element, index) {
-        element.forEach(function (elem, id) {
+const paintGrid = (sqmSize) => {
+    grid.forEach((element, index) => {
+        element.forEach((elem, id) => {
             if (id === 0 || id === element.length - 1) {
                 ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
             }
@@ -147,7 +142,7 @@ var paintGrid = function (sqmSize) {
         });
     });
 };
-var gameRendering = function () {
+const gameRendering = () => {
     nextFrameBegin();
     paintGrid(32);
     if (healthLeft < 1) {
@@ -155,11 +150,11 @@ var gameRendering = function () {
     }
     ctx.fillStyle = '#b71540';
     ctx.font = 'normal small-caps bold 48px rakkas';
-    drawAnim(50, 50, 64, 64, constants_1.HPIMG, 5);
-    ctx.fillText(" x " + healthLeft, 50 + 64, 50 + 48);
-    onmousemove = function (e) {
+    drawAnim(50, 50, 64, 64, HPIMG, 5);
+    ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
+    onmousemove = (e) => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
-            playerCursor.img.src = constants_1.PLAYER.imgWest;
+            playerCursor.img.src = PLAYER.imgWest;
             trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
             trailPosX = -38.5;
             trailPosY = 30;
@@ -167,7 +162,7 @@ var gameRendering = function () {
             trailHeight = 20;
         }
         else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
-            playerCursor.img.src = constants_1.PLAYER.imgEast;
+            playerCursor.img.src = PLAYER.imgEast;
             trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
             trailPosX = 100.5;
             trailPosY = 30;
@@ -175,7 +170,7 @@ var gameRendering = function () {
             trailHeight = 20;
         }
         else if (e.clientY != previousPlayerY) {
-            playerCursor.img.src = constants_1.PLAYER.imgNorth;
+            playerCursor.img.src = PLAYER.imgNorth;
             trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
             trailPosX = -16;
             trailPosY = 50;
@@ -202,20 +197,20 @@ var gameRendering = function () {
         spawnRate = spawnRateStages[6];
     }
     if (interval % spawnRate === 3) {
-        var enemyLv1 = {
+        const enemyLv1 = {
             img: new Image(),
-            width: constants_1.ENEMYLV1.width,
-            height: constants_1.ENEMYLV1.height,
+            width: ENEMYLV1.width,
+            height: ENEMYLV1.height,
             x: Math.floor((Math.random() * window.innerWidth + 50) - 25),
-            y: constants_1.ENEMYLV1.y,
-            speed: constants_1.ENEMYLV1.speed,
-            radius: constants_1.ENEMYLV1.radius,
-            mutation: Math.floor(Math.random() * 4) + 1
+            y: ENEMYLV1.y,
+            speed: ENEMYLV1.speed,
+            radius: ENEMYLV1.radius,
+            mutation: Math.floor(Math.random() * 4) + 1,
         };
-        enemyLv1.img.src = constants_1.ENEMYLV1.img;
+        enemyLv1.img.src = ENEMYLV1.img;
         enemies.push(enemyLv1);
     }
-    enemies.forEach(function (element) {
+    enemies.forEach((element) => {
         switch (element.mutation) {
             case 1:
                 AiMoveAway(playerCursor, element, 5);
@@ -233,24 +228,24 @@ var gameRendering = function () {
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
         element.y += element.speed;
         if (element.y >= window.innerHeight) {
-            var index = enemies.indexOf(element);
+            const index = enemies.indexOf(element);
             enemies.splice(index, 1);
             if (element.x > 0 && element.x < window.innerWidth)
                 healthLeft--;
         }
-        if ((0, utils_1.collision)(playerCursor, element) <= element.radius / 2) {
-            var index = enemies.indexOf(element);
+        if (collision(playerCursor, element) <= element.radius / 2) {
+            const index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
         ;
     });
-    var trail = {
+    const trail = {
         x: playerCursor.x,
         y: playerCursor.y,
-        width: constants_1.TRAIL.width,
-        height: constants_1.TRAIL.height
+        width: TRAIL.width,
+        height: TRAIL.height,
     };
-    trailsArray.forEach(function (element) {
+    trailsArray.forEach((element) => {
         ctx.beginPath();
         switch (Math.floor(Math.random() * 4 + 1)) {
             case 1:
@@ -273,13 +268,13 @@ var gameRendering = function () {
         ctx.stroke();
     });
     if (interval % 23 === 1 || interval % 23 === 2) {
-        trailsArray.forEach(function (element) {
-            var index = trailsArray.indexOf(element);
+        trailsArray.forEach((element) => {
+            const index = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);
         });
     }
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 };
-var gameRender = setInterval(gameRendering, 1000 / 60);
-(0, utils_1.createGrid)(32, grid);
+const gameRender = setInterval(gameRendering, 1000 / 60);
+createGrid(32, grid);
