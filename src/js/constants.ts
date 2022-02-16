@@ -1,4 +1,3 @@
-
 export const PLAYER = {
     imgEast: 'https://i.postimg.cc/9Ms2RcW0/player.png',
     imgNorth: 'https://i.postimg.cc/JnHVWSbL/player-North.png',
@@ -15,11 +14,12 @@ export const ENEMYLV1 = {
     height: 100,
     x: 0,
     y: -50,
-    speed: 5.5,
+    speed: 4,
     radius: 190,
 }
 // Canvas background
 export const BACKGROUND:string = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
+export const BACKGROUND_SLOWMOTION: string = 'https://i.postimg.cc/h4Ys1tTc/tile-Background-Darker-Version.png';
 // User Interface
 export const HPIMG:string = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
 /**

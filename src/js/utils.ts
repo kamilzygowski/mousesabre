@@ -10,7 +10,6 @@ export const debounce = (func: Function, interval: number): Function => {
     timeout = setTimeout(later, interval || 200);
   }
 }
-
 export const collision = (cursor: any, enemy: any): number => {
   const dx: number = cursor.x - enemy.x;
   const dy: number = cursor.y - enemy.y;

@@ -1,25 +1,27 @@
-import { BACKGROUND, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
+import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
 import { collision, createGrid } from "./utils";
 let canvas;
 let ctx;
-const background = new Image();
-let healthLeft = 5;
+let healthLeft = 55555;
 let grid = [];
+const enemies = [];
+const trailsArray = new Array;
 const MAIN_URL = location.href;
+let isSlowMotion = false;
+const background = new Image();
 const sideTile = new Image();
 sideTile.src = TAILS_SIDE;
 const bottomTile = new Image();
 bottomTile.src = TAILS_BOTTOM;
 const backgroundTile = new Image();
 backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
-let interval = 0;
-let previousPlayerX, previousPlayerY;
-const enemies = [];
-const trailsArray = new Array;
 let trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
 let trailPosX, trailPosY, trailWidth, trailHeight;
 const trailLeftBehind = new Image();
 trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
+let interval = 0;
+let previousPlayerX, previousPlayerY;
+let samuraiSkillPosArr = [];
 const spawnRateStages = [
     384,
     192,
@@ -42,12 +44,14 @@ playerCursor.img.src = PLAYER.imgEast;
 const nextFrameBegin = () => {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 };
-const AiMoveAway = (player, creature, speed) => {
-    if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-        creature.x -= speed;
-    }
-    else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-        creature.x += speed;
+const Ai_MoveAway = (player, creature, speed) => {
+    if (!isSlowMotion) {
+        if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+            creature.x -= speed;
+        }
+        else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+            creature.x += speed;
+        }
     }
 };
 const AiCirlce = (creature) => {
@@ -56,8 +60,8 @@ const AiCirlce = (creature) => {
         creature.y = 170 * Math.cos(interval / 100);
     }, 500);
 };
-const AiClone = (creature) => {
-    if (Math.floor(Math.random() * 200) === 1) {
+const Ai_Clone = (creature) => {
+    if (Math.floor(Math.random() * 50) === 1) {
         let clone = Object.create(creature);
         if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
             clone.x += Math.round(Math.random() * 30) + 25;
@@ -69,22 +73,31 @@ const AiClone = (creature) => {
         }
     }
 };
-const AiTeleport = (player, creature) => {
-    if (player.x > creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0 ||
-        player.x < creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-        const randomRange = Math.round(Math.random() * 400) - 200;
-        creature.x += randomRange;
-        const animate = setInterval(() => {
-            drawAnim(creature.x - 10, creature.y - 10, 128, 128, ENEMY_AI_TELEPORT, 8);
-        }, 1000 / 120);
-        setTimeout(() => {
-            clearInterval(animate);
-        }, 450);
+const Ai_Teleport = (player, creature) => {
+    if (!isSlowMotion) {
+        if (player.x > creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0 ||
+            player.x < creature.x && Math.abs(player.x - creature.x) < 50 && creature.x < window.innerWidth - 60 && creature.x > 0) {
+            const randomRange = Math.round(Math.random() * 400) - 200;
+            creature.x += randomRange;
+            const animate = setInterval(() => {
+                drawAnim(creature.x - 10, creature.y - 10, 128, 128, ENEMY_AI_TELEPORT, 8);
+            }, 1000 / 120);
+            setTimeout(() => {
+                clearInterval(animate);
+            }, 450);
+        }
     }
 };
-const AiRushDown = (creature, speed) => {
+const Ai_RushDown = (creature, speed) => {
     drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4);
+    const argSpeedValue = speed;
     setTimeout(() => {
+        if (isSlowMotion) {
+            speed = 0.5;
+        }
+        else {
+            speed = argSpeedValue;
+        }
         creature.y += speed;
     }, 1500);
 };
@@ -121,12 +134,36 @@ export const initGameState = () => {
     canvas.height = window.innerHeight - 5;
     background.src = BACKGROUND;
     canvas.addEventListener('contextmenu', (e) => {
-        playerSkillSamuraiSlash();
+        playerSkill_SamuraiSlash();
         e.preventDefault();
     });
 };
-const playerSkillSamuraiSlash = () => {
-    console.log('o');
+const playerSkill_SamuraiSlash = () => {
+    slowMotionMode(3.5);
+    const skillHitbox = setInterval(() => {
+        ctx.beginPath();
+        ctx.lineWidth = 12;
+        samuraiSkillPosArr.forEach((element) => {
+            ctx.lineTo(element.x, element.y);
+        });
+        ctx.stroke();
+    }, 1000 / 60);
+    setTimeout(() => {
+        samuraiSkillPosArr = [];
+        clearInterval(skillHitbox);
+    }, 4500);
+};
+const slowMotionMode = (seconds) => {
+    isSlowMotion = true;
+    clearInterval(gameRender);
+    gameRender = setInterval(gameRendering, 1000 / 12);
+    background.src = BACKGROUND_SLOWMOTION;
+    setTimeout(() => {
+        isSlowMotion = false;
+        clearInterval(gameRender);
+        background.src = BACKGROUND;
+        gameRender = setInterval(gameRendering, 1000 / 60);
+    }, seconds * 1000);
 };
 const paintGrid = (sqmSize) => {
     grid.forEach((element, index) => {
@@ -141,6 +178,11 @@ const paintGrid = (sqmSize) => {
             }
         });
     });
+};
+const createSwordTrailTick = (element, tick) => {
+    ctx.lineTo(element.x, element.y - 25);
+    ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20));
+    tick !== 0 ? createSwordTrailTick(element, tick - 1) : null;
 };
 const gameRendering = () => {
     nextFrameBegin();
@@ -182,10 +224,17 @@ const gameRendering = () => {
         previousPlayerX = e.clientX;
         previousPlayerY = e.clientY;
         trailsArray.push(trail);
+        if (isSlowMotion) {
+            const playerSlowMotionPos = {
+                x: e.clientX,
+                y: e.clientY
+            };
+            samuraiSkillPosArr.push(playerSlowMotionPos);
+        }
     };
     interval++;
     if (interval / 1000 > 0) {
-        spawnRate = spawnRateStages[1];
+        spawnRate = spawnRateStages[4];
     }
     else if (interval / 1000 > 2) {
         spawnRate = spawnRateStages[2];
@@ -213,16 +262,16 @@ const gameRendering = () => {
     enemies.forEach((element) => {
         switch (element.mutation) {
             case 1:
-                AiMoveAway(playerCursor, element, 5);
+                Ai_MoveAway(playerCursor, element, 5);
                 break;
             case 2:
-                AiClone(element);
+                Ai_Clone(element);
                 break;
             case 3:
-                AiTeleport(playerCursor, element);
+                Ai_Teleport(playerCursor, element);
                 break;
             case 4:
-                AiRushDown(element, 20);
+                Ai_RushDown(element, 20);
                 break;
         }
         ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
@@ -233,11 +282,16 @@ const gameRendering = () => {
             if (element.x > 0 && element.x < window.innerWidth)
                 healthLeft--;
         }
-        if (collision(playerCursor, element) <= element.radius / 2) {
+        if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
             const index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
-        ;
+        samuraiSkillPosArr.forEach((slashPos) => {
+            if (collision(slashPos, element) < 5 && !isSlowMotion) {
+                const index = enemies.indexOf(element);
+                enemies.splice(index, 1);
+            }
+        });
     });
     const trail = {
         x: playerCursor.x,
@@ -246,35 +300,39 @@ const gameRendering = () => {
         height: TRAIL.height,
     };
     trailsArray.forEach((element) => {
-        ctx.beginPath();
-        switch (Math.floor(Math.random() * 4 + 1)) {
-            case 1:
-                ctx.strokeStyle = '#2ce8f5';
-                break;
-            case 2:
-                ctx.strokeStyle = '#0099db';
-                break;
-            case 3:
-                ctx.strokeStyle = '#fff';
-                break;
-            case 4: ctx.strokeStyle = '#7b2cf5';
+        if (!isSlowMotion) {
+            ctx.beginPath();
+            switch (Math.floor(Math.random() * 4 + 1)) {
+                case 1:
+                    ctx.strokeStyle = '#2ce8f5';
+                    break;
+                case 2:
+                    ctx.strokeStyle = '#0099db';
+                    break;
+                case 3:
+                    ctx.strokeStyle = '#fff';
+                    break;
+                case 4: ctx.strokeStyle = '#7b2cf5';
+            }
+            ctx.lineWidth = 3;
+            createSwordTrailTick(element, 12);
+            ctx.stroke();
         }
-        ctx.lineWidth = 3;
-        ctx.lineTo(element.x, element.y - 25);
-        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20));
-        ctx.lineTo(element.x, element.y - 25);
-        ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 + (Math.random() * 40 - 20));
-        ctx.lineTo(element.x, element.y - 25);
-        ctx.stroke();
     });
-    if (interval % 23 === 1 || interval % 23 === 2) {
-        trailsArray.forEach((element) => {
+    trailsArray.forEach((element) => {
+        if (collision(playerCursor, element) > 220) {
             const index = trailsArray.indexOf(element);
             trailsArray.splice(index, 1);
-        });
-    }
-    drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
+        }
+        if (interval % 12 === 1) {
+            const index = trailsArray.indexOf(element);
+            trailsArray.splice(index, 1);
+        }
+    });
+    !isSlowMotion ? drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7) : null;
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
 };
-const gameRender = setInterval(gameRendering, 1000 / 60);
+let gameRender = setInterval(() => {
+    gameRendering();
+}, 1000 / 60);
 createGrid(32, grid);

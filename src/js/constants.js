@@ -14,10 +14,11 @@ export const ENEMYLV1 = {
     height: 100,
     x: 0,
     y: -50,
-    speed: 5.5,
+    speed: 4,
     radius: 190,
 };
 export const BACKGROUND = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
+export const BACKGROUND_SLOWMOTION = 'https://i.postimg.cc/h4Ys1tTc/tile-Background-Darker-Version.png';
 export const HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
 export const ENEMY_AI_RUSHDOWN = 'https://i.postimg.cc/pXVV7Hhy/rushdown.png';
 export const ENEMY_AI_TELEPORT = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
