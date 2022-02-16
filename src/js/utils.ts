@@ -30,3 +30,16 @@ export const createGrid = (sqmSize: number, parentArray: Array<[]>): void => {
     parentArray.push(newRow)
   }
 }
+export const fakeHistoryBack = (window: Window, location: Location): void => {
+  history.replaceState(null, document.title, location.pathname + "#!/stealingyourhistory");
+  history.pushState(null, document.title, location.pathname);
+  const BASIC_URL: string = location.href;
+  window.addEventListener("popstate", (): void => {
+    if (location.hash === "#!/stealingyourhistory") {
+      history.replaceState(null, document.title, location.pathname);
+      setTimeout(function () {
+        location.replace(BASIC_URL);
+      }, 0);
+    }
+  }, false);
+}

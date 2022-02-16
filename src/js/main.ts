@@ -1,4 +1,4 @@
-import { AITELEPORTIMG, BACKGROUND, ENEMYLV1, HPIMG, PLAYER, TRAIL } from "./constants";
+import { BACKGROUND, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
 import { collision, createGrid } from "./utils";
 
 interface Cursor {
@@ -28,14 +28,17 @@ interface Trail {
 
 let canvas: any;
 let ctx: CanvasRenderingContext2D;
-const background = new Image();
+const background: HTMLImageElement = new Image();
 let healthLeft: number = 5;
 let grid: Array<[]> = [];
+const MAIN_URL: string = location.href;
 
 const sideTile: HTMLImageElement = new Image();
-sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
+sideTile.src = TAILS_SIDE;
 const bottomTile: HTMLImageElement = new Image();
-bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
+bottomTile.src = TAILS_BOTTOM;
+const backgroundTile: HTMLImageElement = new Image();
+backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
 
 // Helpers variables
 let interval: number = 0;
@@ -114,7 +117,7 @@ const AiTeleport = (player: Cursor, creature: Enemy): void => {
         const randomRange: number = Math.round(Math.random() * 400) - 200;
         creature.x += randomRange;
         const animate: NodeJS.Timer = setInterval(() => {
-            drawAnim(creature.x - 10, creature.y - 10, 128, 128, AITELEPORTIMG, 8)
+            drawAnim(creature.x - 10, creature.y - 10, 128, 128, ENEMY_AI_TELEPORT, 8)
         }, 1000 / 120)
         setTimeout(() => {
             clearInterval(animate);
@@ -123,7 +126,7 @@ const AiTeleport = (player: Cursor, creature: Enemy): void => {
 }
 
 const AiRushDown = (creature: Enemy, speed: number): void => {
-    drawAnim(creature.x, creature.y - 160, 128, 256, 'https://i.postimg.cc/pXVV7Hhy/rushdown.png', 4)
+    drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4)
     setTimeout(() => {
         creature.y += speed;
     }, 1500);
@@ -143,6 +146,20 @@ export const startGame = (): void => {
 const gameOver = (): void => {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
+    document.body.innerHTML = '';
+    const gameOverTag: HTMLElement = document.createElement('h1');
+    gameOverTag.textContent = 'GAME OVER';
+    gameOverTag.classList.add('gameOverText');
+    canvas.style = 'display:none;'
+    document.body.appendChild(gameOverTag);
+    const menuButton: HTMLButtonElement = document.createElement('button');
+    menuButton.textContent = 'Main Menu';
+    menuButton.classList.add('menuButton');
+    document.body.appendChild(menuButton);
+    // On button click reload page to the first locationUrl (to the main menu)
+    menuButton.addEventListener('click', ():void => {
+        location.href = MAIN_URL;
+    })
 }
 
 export const initGameState = (): void => {
@@ -153,8 +170,18 @@ export const initGameState = (): void => {
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
     background.src = BACKGROUND;
+
+    canvas.addEventListener('contextmenu', (e: MouseEvent): void => {
+        playerSkillSamuraiSlash();
+        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
+        e.preventDefault();
+    })
 }
-const paintGreed = (sqmSize: number): void => {
+
+const playerSkillSamuraiSlash = (): void => {
+    console.log('o')
+}
+const paintGrid = (sqmSize: number): void => {
     grid.forEach((element: [], index: number): void => {
         element.forEach((elem: object, id: number): void => {
             // Below comments checks if every squaremeter got correct position
@@ -164,8 +191,10 @@ const paintGreed = (sqmSize: number): void => {
             if (id === 0 || id === element.length - 1) {
                 ctx.drawImage(sideTile, sqmSize * id, sqmSize * index)
             }
-            if (index === grid.length - 2) {
+            else if (index === grid.length - 2) {
                 ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index)
+            } else {
+                //ctx.drawImage(backgroundTile, sqmSize * id, sqmSize * index)
             }
         })
     })
@@ -173,17 +202,17 @@ const paintGreed = (sqmSize: number): void => {
 /**
  * Canvas Rendering
  */
-const gameRender: NodeJS.Timer = setInterval((): void => {
+const gameRendering = (): void => {
     nextFrameBegin();
-    paintGreed(32);
+    paintGrid(32);
     if (healthLeft < 1) {
         gameOver();
     }
     // Interface player health info
     ctx.fillStyle = '#b71540';
-    ctx.font = 'normal small-caps bold 48px serif';
+    ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5)
-    ctx.fillText(` x${healthLeft}`, 50 + 64, 50 + 48);
+    ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
 
     // Setup animations on every position change
     onmousemove = (e: MouseEvent): void => {
@@ -293,6 +322,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
                 break;
             case 4: ctx.strokeStyle = '#7b2cf5';
         }
+        ctx.lineWidth = 3;
         ctx.lineTo(element.x, element.y - 25);
         ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20))
         ctx.lineTo(element.x, element.y - 25);
@@ -310,6 +340,7 @@ const gameRender: NodeJS.Timer = setInterval((): void => {
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-}, 1000 / 60);
+}
+const gameRender: NodeJS.Timer = setInterval(gameRendering, 1000 / 60);
 createGrid(32, grid);
 // Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor

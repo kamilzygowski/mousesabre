@@ -8,10 +8,13 @@ var ctx;
 var background = new Image();
 var healthLeft = 5;
 var grid = [];
+var MAIN_URL = location.href;
 var sideTile = new Image();
-sideTile.src = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
+sideTile.src = constants_1.TAILS_SIDE;
 var bottomTile = new Image();
-bottomTile.src = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
+bottomTile.src = constants_1.TAILS_BOTTOM;
+var backgroundTile = new Image();
+backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
 // Helpers variables
 var interval = 0;
 var previousPlayerX, previousPlayerY;
@@ -84,7 +87,7 @@ var AiTeleport = function (player, creature) {
         var randomRange = Math.round(Math.random() * 400) - 200;
         creature.x += randomRange;
         var animate_1 = setInterval(function () {
-            drawAnim(creature.x - 10, creature.y - 10, 128, 128, constants_1.AITELEPORTIMG, 8);
+            drawAnim(creature.x - 10, creature.y - 10, 128, 128, constants_1.ENEMY_AI_TELEPORT, 8);
         }, 1000 / 120);
         setTimeout(function () {
             clearInterval(animate_1);
@@ -92,7 +95,7 @@ var AiTeleport = function (player, creature) {
     }
 };
 var AiRushDown = function (creature, speed) {
-    drawAnim(creature.x, creature.y - 160, 128, 256, 'https://i.postimg.cc/pXVV7Hhy/rushdown.png', 4);
+    drawAnim(creature.x, creature.y - 160, 128, 256, constants_1.ENEMY_AI_RUSHDOWN, 4);
     setTimeout(function () {
         creature.y += speed;
     }, 1500);
@@ -110,6 +113,20 @@ exports.startGame = startGame;
 var gameOver = function () {
     clearInterval(gameRender);
     document.body.classList.remove('hideCursor');
+    document.body.innerHTML = '';
+    var gameOverTag = document.createElement('h1');
+    gameOverTag.textContent = 'GAME OVER';
+    gameOverTag.classList.add('gameOverText');
+    canvas.style = 'display:none;';
+    document.body.appendChild(gameOverTag);
+    var menuButton = document.createElement('button');
+    menuButton.textContent = 'Main Menu';
+    menuButton.classList.add('menuButton');
+    document.body.appendChild(menuButton);
+    // On button click reload page to the first locationUrl (to the main menu)
+    menuButton.addEventListener('click', function () {
+        location.href = MAIN_URL;
+    });
 };
 var initGameState = function () {
     canvas = document.getElementById('canvas');
@@ -119,9 +136,17 @@ var initGameState = function () {
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
     background.src = constants_1.BACKGROUND;
+    canvas.addEventListener('contextmenu', function (e) {
+        playerSkillSamuraiSlash();
+        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
+        e.preventDefault();
+    });
 };
 exports.initGameState = initGameState;
-var paintGreed = function (sqmSize) {
+var playerSkillSamuraiSlash = function () {
+    console.log('o');
+};
+var paintGrid = function (sqmSize) {
     grid.forEach(function (element, index) {
         element.forEach(function (elem, id) {
             // Below comments checks if every squaremeter got correct position
@@ -131,8 +156,11 @@ var paintGreed = function (sqmSize) {
             if (id === 0 || id === element.length - 1) {
                 ctx.drawImage(sideTile, sqmSize * id, sqmSize * index);
             }
-            if (index === grid.length - 2) {
+            else if (index === grid.length - 2) {
                 ctx.drawImage(bottomTile, sqmSize * id, sqmSize * index);
+            }
+            else {
+                //ctx.drawImage(backgroundTile, sqmSize * id, sqmSize * index)
             }
         });
     });
@@ -140,17 +168,17 @@ var paintGreed = function (sqmSize) {
 /**
  * Canvas Rendering
  */
-var gameRender = setInterval(function () {
+var gameRendering = function () {
     nextFrameBegin();
-    paintGreed(32);
+    paintGrid(32);
     if (healthLeft < 1) {
         gameOver();
     }
     // Interface player health info
     ctx.fillStyle = '#b71540';
-    ctx.font = 'normal small-caps bold 48px serif';
+    ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, constants_1.HPIMG, 5);
-    ctx.fillText(" x" + healthLeft, 50 + 64, 50 + 48);
+    ctx.fillText(" x " + healthLeft, 50 + 64, 50 + 48);
     // Setup animations on every position change
     onmousemove = function (e) {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
@@ -271,6 +299,7 @@ var gameRender = setInterval(function () {
                 break;
             case 4: ctx.strokeStyle = '#7b2cf5';
         }
+        ctx.lineWidth = 3;
         ctx.lineTo(element.x, element.y - 25);
         ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20));
         ctx.lineTo(element.x, element.y - 25);
@@ -288,6 +317,7 @@ var gameRender = setInterval(function () {
     drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7);
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
-}, 1000 / 60);
+};
+var gameRender = setInterval(gameRendering, 1000 / 60);
 (0, utils_1.createGrid)(32, grid);
 // Jak cos wezmiesz to zatrzymuje sie czas (ekran robi sie szart) i wtedy musisz narysowac wzor na ekranie, ktory po chwili  zamieni sie w kozacki wzor

@@ -1,3 +1,4 @@
+
 export const PLAYER = {
     imgEast: 'https://i.postimg.cc/9Ms2RcW0/player.png',
     imgNorth: 'https://i.postimg.cc/JnHVWSbL/player-North.png',
@@ -18,8 +19,16 @@ export const ENEMYLV1 = {
     radius: 190,
 }
 // Canvas background
-export const BACKGROUND = 'https://i.postimg.cc/1z6hwLWt/Purple-Nebula-3-1024x1024.png';
-//exports.BACKGROUND = 'https://i.postimg.cc/rwnx5kTk/City3.png';
-export const AITELEPORTIMG = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
+export const BACKGROUND:string = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
 // User Interface
-export const HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
+export const HPIMG:string = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
+/**
+ * Enemy Ai Animations/Imgs
+ */
+export const ENEMY_AI_RUSHDOWN:string = 'https://i.postimg.cc/pXVV7Hhy/rushdown.png';
+export const ENEMY_AI_TELEPORT:string = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
+/**
+ * Tails
+ */
+export const TAILS_BOTTOM:string = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
+export const TAILS_SIDE: string =  'https://i.postimg.cc/G3ZSzHdd/sideTile.png';
