@@ -14,7 +14,7 @@ export const ENEMYLV1 = {
     height: 100,
     x: 0,
     y: -50,
-    speed: 4,
+    speed: 3.5,
     radius: 190,
 };
 export const BACKGROUND = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';

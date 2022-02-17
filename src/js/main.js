@@ -2,7 +2,7 @@ import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_A
 import { collision, createGrid } from "./utils";
 let canvas;
 let ctx;
-let healthLeft = 55555;
+let healthLeft = 20;
 let grid = [];
 const enemies = [];
 const trailsArray = new Array;
@@ -148,6 +148,17 @@ const playerSkill_SamuraiSlash = () => {
         });
         ctx.stroke();
     }, 1000 / 60);
+    switch (Math.floor(Math.random() * 3 + 1)) {
+        case 1:
+            ctx.strokeStyle = '#EE5A24';
+            break;
+        case 2:
+            ctx.strokeStyle = '#9980FA';
+            break;
+        case 3:
+            ctx.strokeStyle = '#1B1464';
+            break;
+    }
     setTimeout(() => {
         samuraiSkillPosArr = [];
         clearInterval(skillHitbox);
@@ -184,7 +195,22 @@ const createSwordTrailTick = (element, tick) => {
     ctx.lineTo(element.x + (Math.random() * 40 - 20), element.y - 25 - (Math.random() * 40 - 20));
     tick !== 0 ? createSwordTrailTick(element, tick - 1) : null;
 };
+const creatureDeathAnim = (enemy, animTimeSeconds) => {
+    let posX = enemy.x;
+    let posY = enemy.y;
+    const render = setInterval(() => {
+        ctx.beginPath();
+        ctx.lineWidth = 12;
+        ctx.strokeStyle = '#6F1E51';
+        createSwordTrailTick({ x: posX + 55, y: posY + 110 }, 7);
+        ctx.stroke();
+    }, 1000 / 120);
+    setTimeout(() => {
+        clearInterval(render);
+    }, animTimeSeconds * 1000);
+};
 const gameRendering = () => {
+    let enemyDeathX, enemyDeathY;
     nextFrameBegin();
     paintGrid(32);
     if (healthLeft < 1) {
@@ -245,6 +271,7 @@ const gameRendering = () => {
     else if (interval / 1000 > 6) {
         spawnRate = spawnRateStages[6];
     }
+    let deathImage = ENEMYLV1.img;
     if (interval % spawnRate === 3) {
         const enemyLv1 = {
             img: new Image(),
@@ -260,6 +287,10 @@ const gameRendering = () => {
         enemies.push(enemyLv1);
     }
     enemies.forEach((element) => {
+        const deathPosX = element.x;
+        const deathPosY = element.y;
+        enemyDeathX = deathPosX;
+        enemyDeathY = deathPosY;
         switch (element.mutation) {
             case 1:
                 Ai_MoveAway(playerCursor, element, 5);
@@ -283,11 +314,13 @@ const gameRendering = () => {
                 healthLeft--;
         }
         if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
+            creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4);
             const index = enemies.indexOf(element);
             enemies.splice(index, 1);
         }
         samuraiSkillPosArr.forEach((slashPos) => {
-            if (collision(slashPos, element) < 5 && !isSlowMotion) {
+            if (collision(slashPos, element) < 10 && !isSlowMotion) {
+                creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6);
                 const index = enemies.indexOf(element);
                 enemies.splice(index, 1);
             }

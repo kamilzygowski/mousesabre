@@ -1,4 +1,3 @@
-// Test import of a JavaScript module
 import { main } from '@/js/main'
 import { menu } from '@/js/menu'
 
