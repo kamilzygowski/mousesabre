@@ -9,7 +9,8 @@ export const TRAIL = {
     height: 53
 }
 export const ENEMYLV1 = {
-    img: 'https://i.postimg.cc/MZ05K17Q/enemy.png',
+    img: 'https://i.postimg.cc/XJSWPmDq/enemylv1-Big.png',
+    img2: 'https://i.postimg.cc/vBqb8hYw/enemylv1-Big-R.png',
     width: 100,
     height: 100,
     x: 0,

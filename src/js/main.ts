@@ -16,6 +16,7 @@ interface Enemy {
     speed: number;
     radius: number;
     mutation?: number;
+    src?: string;
 }
 interface Trail {
     img?: HTMLImageElement;
@@ -52,7 +53,7 @@ trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
 // HELPERS VARIABLES
 let interval: number = 0;
 let previousPlayerX: number, previousPlayerY: number;
-let samuraiSkillPosArr: [] = [];
+let samuraiSkillPosArr: [Positions?] = [];
 const spawnRateStages: Array<number> = [
     384, // 1 enemies on screen
     192, // 2 enemies on screen
@@ -74,14 +75,53 @@ const playerCursor: Cursor = {
     y: -100,
 }
 playerCursor.img.src = PLAYER.imgEast;
-
 /*****************************************************
  Functions
  *****************************************************/
 const nextFrameBegin = (): void => {
     ctx.drawImage(background, 0, 0, canvas.clientWidth, canvas.clientHeight);
 }
-
+export const initGameState = (): void => {
+    document.body.classList.add('hideCursor');
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+    // Make gamelook a bitsmaller on screen width > 1600
+    // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
+    canvas.width = window.innerWidth - 5;
+    canvas.height = window.innerHeight - 5;
+    background.src = BACKGROUND;
+    // IN GAME EVENT LISTENERS
+    // Attach right mouse click skill
+    canvas.addEventListener('contextmenu', (e: MouseEvent): void => {
+        playerSkill_SamuraiSlash();
+        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
+        e.preventDefault();
+    })
+}
+const drawAnim = (x: number, y: number, width: number, height: number, src: string, framesNumber: number): void => {
+    let image: HTMLImageElement = new Image();
+    image.src = src;
+    const thisFrame: number = Math.round(interval % (framesNumber * 10) / 10)
+    ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
+}
+const gameOver = (): void => {
+    clearInterval(gameRender);
+    document.body.classList.remove('hideCursor');
+    document.body.innerHTML = '';
+    const gameOverTag: HTMLElement = document.createElement('h1');
+    gameOverTag.textContent = 'GAME OVER';
+    gameOverTag.classList.add('gameOverText');
+    canvas.style = 'display:none;'
+    document.body.appendChild(gameOverTag);
+    const menuButton: HTMLButtonElement = document.createElement('button');
+    menuButton.textContent = 'Main Menu';
+    menuButton.classList.add('menuButton');
+    document.body.appendChild(menuButton);
+    // On button click reload page to the first locationUrl (to the main menu)
+    menuButton.addEventListener('click', (): void => {
+        location.href = MAIN_URL;
+    })
+}
 const Ai_MoveAway = (player: Cursor, creature: Enemy, speed: number): void => {
     if (!isSlowMotion) {
         if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
@@ -99,8 +139,8 @@ const AiCirlce = (creature: Enemy): void => {
     }, 500);
 }
 const Ai_Clone = (creature: Enemy): void => {
-    // 60% chance every sec to spawn copy
-    if (Math.floor(Math.random() * 50) === 1) {
+    // 45% chance every sec to spawn copy
+    if (Math.floor(Math.random() * 75) === 1) {
         let clone: Enemy = Object.create(creature)
         // Randomly spawn copies on the random x axis positions of clone parent
         if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
@@ -139,63 +179,14 @@ const Ai_RushDown = (creature: Enemy, speed: number): void => {
         creature.y += speed;
     }, 1500);
 }
-const drawAnim = (x: number, y: number, width: number, height: number, src: string, framesNumber: number): void => {
-    let image: HTMLImageElement = new Image();
-    image.src = src;
-    const thisFrame: number = Math.round(interval % (framesNumber * 10) / 10)
-    ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
-}
-export const startGame = (): void => {
-    document.body.classList.add('hideCursor');
-}
-const gameOver = (): void => {
-    clearInterval(gameRender);
-    document.body.classList.remove('hideCursor');
-    document.body.innerHTML = '';
-    const gameOverTag: HTMLElement = document.createElement('h1');
-    gameOverTag.textContent = 'GAME OVER';
-    gameOverTag.classList.add('gameOverText');
-    canvas.style = 'display:none;'
-    document.body.appendChild(gameOverTag);
-    const menuButton: HTMLButtonElement = document.createElement('button');
-    menuButton.textContent = 'Main Menu';
-    menuButton.classList.add('menuButton');
-    document.body.appendChild(menuButton);
-    // On button click reload page to the first locationUrl (to the main menu)
-    menuButton.addEventListener('click', (): void => {
-        location.href = MAIN_URL;
-    })
-}
-export const initGameState = (): void => {
-    canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
-    // Make gamelook a bitsmaller on screen width > 1600
-    // -> for later window.innerWidth > 1600 ? canvas.width = window.innerWidth - 255: canvas.width = window.innerWidth - 5;
-    canvas.width = window.innerWidth - 5;
-    canvas.height = window.innerHeight - 5;
-    background.src = BACKGROUND;
-
-    // Attach right mouse click skill
-    canvas.addEventListener('contextmenu', (e: MouseEvent): void => {
-        playerSkill_SamuraiSlash();
-        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
-        e.preventDefault();
-    })
-}
-
 const playerSkill_SamuraiSlash = (): void => {
-    slowMotionMode(3.5);
-    
+    slowMotionMode(3.5); 
     const skillHitbox: NodeJS.Timer = setInterval((): void => {
         ctx.beginPath();
-        ctx.lineWidth = 12;
-
-        
+        ctx.lineWidth = 10; 
         samuraiSkillPosArr.forEach((element: Positions) => {
             ctx.lineTo(element.x, element.y);
-
-        })
-        
+        })    
         ctx.stroke();
     }, 1000 / 60)
     switch(Math.floor(Math.random()*3+1)){
@@ -206,13 +197,12 @@ const playerSkill_SamuraiSlash = (): void => {
         case 3: ctx.strokeStyle = '#1B1464';
         break;
     }
-    setTimeout(() => {
+    setTimeout(():void => {
         // Clean info about previous SamuraiSlash positions
         samuraiSkillPosArr = [];
         clearInterval(skillHitbox);
     }, 4500);
 }
-
 const slowMotionMode = (seconds: number): void => {
     isSlowMotion = true;
     clearInterval(gameRender);
@@ -251,31 +241,25 @@ const createSwordTrailTick = (element: Trail, tick: number): void => {
 const creatureDeathAnim = (enemy: Enemy, animTimeSeconds: number): void => {
     let posX:number = enemy.x;
     let posY:number = enemy.y;
-   /* const render: NodeJS.Timer = setInterval((): void => {
-        //drawAnim(posX + 10, posY + 30, 68, 68, 'https://i.postimg.cc/tJZMHVyX/new-Enemy-Death.png', 9);
-        drawAnim(posX + 10, posY + 30, 68, 68, 'https://i.postimg.cc/tJZMHVyX/new-Enemy-Death.png', 9)
-    }, 1000 / 120)
-    setTimeout(() => {
-        clearInterval(render);
-    }, animTimeSeconds * 1000);*/
-
     const render: NodeJS.Timer = setInterval((): void => {
         ctx.beginPath();
         ctx.lineWidth = 12;
         ctx.strokeStyle = '#6F1E51';
-        createSwordTrailTick({x:posX + 55, y:posY +110}, 7)
-        //ctx.arc(posX, posY, 40, 0 ,180)
+        createSwordTrailTick({x:posX + 55, y:posY +110}, 2)
         ctx.stroke();
     }, 1000 / 120)
-    setTimeout(() => {
+    setTimeout(():void => {
         clearInterval(render);
     }, animTimeSeconds * 1000);  
+}
+const setAnimationXAxisFlip = (timer:number, imgSrc1:string, imgSrc2:string):string => {
+    const intervalDivider:number = Math.floor(Math.random()*150) + 200;
+    return timer % intervalDivider > intervalDivider/2 ? ENEMYLV1.img : ENEMYLV1.img2;
 }
 /*****************************************************
 CANVAS RENDERING
  *****************************************************/
 const gameRendering = (): void => {
-    let enemyDeathX: number, enemyDeathY: number; //TEMPORARY
     nextFrameBegin();
     paintGrid(32);
     if (healthLeft < 1) {
@@ -338,7 +322,6 @@ const gameRendering = (): void => {
     } else if (interval / 1000 > 6) {
         spawnRate = spawnRateStages[6];
     }
-    let deathImage = ENEMYLV1.img;
     if (interval % spawnRate === 3) {
         // Defining every enemy of this type
         const enemyLv1: Enemy = {
@@ -350,6 +333,7 @@ const gameRendering = (): void => {
             speed: ENEMYLV1.speed,
             radius: ENEMYLV1.radius,
             mutation: Math.floor(Math.random() * 4) + 1,
+            src: Math.floor(Math.random()*2)+1 === 1 ? ENEMYLV1.img : ENEMYLV1.img2
         }
         enemyLv1.img.src = ENEMYLV1.img;
         enemies.push(enemyLv1);
@@ -357,8 +341,6 @@ const gameRendering = (): void => {
     enemies.forEach((element: Enemy) => {
         const deathPosX: number = element.x;
         const deathPosY: number = element.y;
-        enemyDeathX = deathPosX; // TEMPORARY
-        enemyDeathY = deathPosY; // TEMPORARY
         // Apply logic to enemy
         switch (element.mutation) {
             case 1: Ai_MoveAway(playerCursor, element, 5);
@@ -370,7 +352,11 @@ const gameRendering = (): void => {
             case 4: Ai_RushDown(element, 20);
                 break;
         }
-        ctx.drawImage(element.img, element.x, element.y, element.width, element.height);
+        drawAnim(element.x, element.y, 96, 96, element.src, 7);
+        // Pseudo hitbox example of enemy \/
+        /*ctx.beginPath();
+        ctx.arc(element.x, element.y, 48, 0, 8)
+        ctx.stroke();*/
         element.y += element.speed;
         // Enemy arrived to it's destination
         if (element.y >= window.innerHeight) {
@@ -393,7 +379,6 @@ const gameRendering = (): void => {
                 }
             });
         });
-
     /**
      * Sword trail
      */
@@ -437,8 +422,10 @@ const gameRendering = (): void => {
 
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
+    ctx.strokeStyle = '#03045e';
 }
 let gameRender: NodeJS.Timer = setInterval(() => {
-    gameRendering();
-}, 1000 / 60);
+    ctx ? gameRendering() : null;
+}, 1000 / 60)
+// init Grid
 createGrid(32, grid);

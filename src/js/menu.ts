@@ -1,4 +1,4 @@
-import { initGameState, startGame } from "./main";
+import { initGameState } from "./main";
 import { fakeHistoryBack } from "./utils";
 
 const container = document.body;
@@ -24,5 +24,4 @@ container.appendChild(menuImage);
 startButtonTag.addEventListener('click', ():void => {
     fakeHistoryBack(window,location);
     initGameState();
-    startGame();
 })
