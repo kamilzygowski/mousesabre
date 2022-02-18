@@ -5,6 +5,7 @@
         "skipLibCheck": true,
         "moduleResolution": "node",
         "removeComments": true,
-        "module": "esnext"
+        "module": "esnext",
+        "experimentalDecorators": true
     }
 }

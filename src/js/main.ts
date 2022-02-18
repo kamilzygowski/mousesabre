@@ -16,14 +16,15 @@ interface Enemy {
     speed: number;
     radius: number;
     mutation?: number;
+    mutation2?: number;
     src?: string;
 }
 interface Trail {
     img?: HTMLImageElement;
     x: number;
     y: number;
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
 }
 type Positions = {
     x: number,
@@ -34,7 +35,8 @@ let canvas: any;
 let ctx: CanvasRenderingContext2D;
 let healthLeft: number = 20;
 let grid: Array<[]> = [];
-const enemies: Array<Object> = [];
+const enemiesLv1: Enemy[] = [];
+const enemiesLv2: Enemy[] = [];
 const trailsArray = new Array;
 const MAIN_URL: string = location.href;
 let isSlowMotion: boolean = false;
@@ -53,7 +55,7 @@ trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
 // HELPERS VARIABLES
 let interval: number = 0;
 let previousPlayerX: number, previousPlayerY: number;
-let samuraiSkillPosArr: [Positions?] = [];
+let samuraiSkillPosArr: Positions[] = [];
 const spawnRateStages: Array<number> = [
     384, // 1 enemies on screen
     192, // 2 enemies on screen
@@ -101,7 +103,7 @@ export const initGameState = (): void => {
 const drawAnim = (x: number, y: number, width: number, height: number, src: string, framesNumber: number): void => {
     let image: HTMLImageElement = new Image();
     image.src = src;
-    const thisFrame: number = Math.round(interval % (framesNumber * 10) / 10)
+    const thisFrame: number = Math.round(interval % ((framesNumber-1) * 10) / 10)
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 const gameOver = (): void => {
@@ -125,9 +127,9 @@ const gameOver = (): void => {
 const Ai_MoveAway = (player: Cursor, creature: Enemy, speed: number): void => {
     if (!isSlowMotion) {
         if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-            creature.x -= speed;
+            creature.x -= speed*3;
         } else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-            creature.x += speed;
+            creature.x += speed*3;
         }
     }
 }
@@ -138,17 +140,17 @@ const AiCirlce = (creature: Enemy): void => {
         creature.y = 170 * Math.cos(interval / 100)
     }, 500);
 }
-const Ai_Clone = (creature: Enemy): void => {
+const Ai_Clone = (creature: Enemy, creatureLvl: Enemy[]): void => {
     // 45% chance every sec to spawn copy
     if (Math.floor(Math.random() * 75) === 1) {
         let clone: Enemy = Object.create(creature)
         // Randomly spawn copies on the random x axis positions of clone parent
         if (Math.round(Math.random() + 1) === 2 && creature.x < window.innerWidth - 90) {
-            clone.x += Math.round(Math.random() * 30) + 25;
-            enemies.push(clone);
+            clone.x += Math.round(Math.random() * 30) + 35;
+            creatureLvl.push(clone);
         } else if (Math.round(Math.random() + 1) === 1 && creature.x > 90) {
-            clone.x -= Math.round(Math.random() * 30) + 25;
-            enemies.push(clone);
+            clone.x -= Math.round(Math.random() * 30) + 35;
+            creatureLvl.push(clone);
         }
     }
 }
@@ -170,34 +172,34 @@ const Ai_Teleport = (player: Cursor, creature: Enemy): void => {
 const Ai_RushDown = (creature: Enemy, speed: number): void => {
     drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4)
     const argSpeedValue: number = speed;
-    setTimeout(() => {
+    if(creature.y > window.innerHeight * 0.45){
         if (isSlowMotion) {
             speed = 0.5;
         } else {
             speed = argSpeedValue;
         }
         creature.y += speed;
-    }, 1500);
+    }
 }
 const playerSkill_SamuraiSlash = (): void => {
-    slowMotionMode(3.5); 
+    slowMotionMode(3.5);
     const skillHitbox: NodeJS.Timer = setInterval((): void => {
         ctx.beginPath();
-        ctx.lineWidth = 10; 
+        ctx.lineWidth = 10;
         samuraiSkillPosArr.forEach((element: Positions) => {
             ctx.lineTo(element.x, element.y);
-        })    
+        })
         ctx.stroke();
     }, 1000 / 60)
-    switch(Math.floor(Math.random()*3+1)){
+    switch (Math.floor(Math.random() * 3 + 1)) {
         case 1: ctx.strokeStyle = '#EE5A24';
-        break;
+            break;
         case 2: ctx.strokeStyle = '#9980FA';
-        break;
+            break;
         case 3: ctx.strokeStyle = '#1B1464';
-        break;
+            break;
     }
-    setTimeout(():void => {
+    setTimeout((): void => {
         // Clean info about previous SamuraiSlash positions
         samuraiSkillPosArr = [];
         clearInterval(skillHitbox);
@@ -239,22 +241,30 @@ const createSwordTrailTick = (element: Trail, tick: number): void => {
     tick !== 0 ? createSwordTrailTick(element, tick - 1) : null;
 }
 const creatureDeathAnim = (enemy: Enemy, animTimeSeconds: number): void => {
-    let posX:number = enemy.x;
-    let posY:number = enemy.y;
+    let posX: number = enemy.x;
+    let posY: number = enemy.y;
     const render: NodeJS.Timer = setInterval((): void => {
         ctx.beginPath();
         ctx.lineWidth = 12;
         ctx.strokeStyle = '#6F1E51';
-        createSwordTrailTick({x:posX + 55, y:posY +110}, 2)
+        createSwordTrailTick({ x: posX + 55, y: posY + 110 }, 2)
         ctx.stroke();
     }, 1000 / 120)
-    setTimeout(():void => {
+    setTimeout((): void => {
         clearInterval(render);
-    }, animTimeSeconds * 1000);  
+    }, animTimeSeconds * 1000);
 }
-const setAnimationXAxisFlip = (timer:number, imgSrc1:string, imgSrc2:string):string => {
-    const intervalDivider:number = Math.floor(Math.random()*150) + 200;
-    return timer % intervalDivider > intervalDivider/2 ? ENEMYLV1.img : ENEMYLV1.img2;
+const initEnemyAi = (element:Enemy, number: number):void  => {
+    switch (number) {
+        case 1: Ai_MoveAway(playerCursor, element, 5);
+            break;
+        case 2: Ai_Clone(element, enemiesLv2);
+            break;
+        case 3: Ai_Teleport(playerCursor, element);
+            break;
+        case 4: Ai_RushDown(element, 20);
+            break;
+    }
 }
 /*****************************************************
 CANVAS RENDERING
@@ -270,7 +280,6 @@ const gameRendering = (): void => {
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5)
     ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
-
     // Setup animations on every position change
     onmousemove = (e: MouseEvent): void => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
@@ -314,7 +323,7 @@ const gameRendering = (): void => {
     interval++;
     // Set enemies spawn speed by a certain amount of time
     if (interval / 1000 > 0) {
-        spawnRate = spawnRateStages[4];
+        spawnRate = spawnRateStages[3];
     } else if (interval / 1000 > 2) {
         spawnRate = spawnRateStages[2];
     } else if (interval / 1000 > 4) {
@@ -333,26 +342,17 @@ const gameRendering = (): void => {
             speed: ENEMYLV1.speed,
             radius: ENEMYLV1.radius,
             mutation: Math.floor(Math.random() * 4) + 1,
-            src: Math.floor(Math.random()*2)+1 === 1 ? ENEMYLV1.img : ENEMYLV1.img2
+            src: Math.floor(Math.random() * 2) + 1 === 1 ? ENEMYLV1.img : ENEMYLV1.img2
         }
         enemyLv1.img.src = ENEMYLV1.img;
-        enemies.push(enemyLv1);
+        enemiesLv1.push(enemyLv1);
     }
-    enemies.forEach((element: Enemy) => {
+    enemiesLv1.forEach((element: Enemy) => {
         const deathPosX: number = element.x;
         const deathPosY: number = element.y;
         // Apply logic to enemy
-        switch (element.mutation) {
-            case 1: Ai_MoveAway(playerCursor, element, 5);
-                break;
-            case 2: Ai_Clone(element);
-                break;
-            case 3: Ai_Teleport(playerCursor, element);
-                break;
-            case 4: Ai_RushDown(element, 20);
-                break;
-        }
-        drawAnim(element.x, element.y, 96, 96, element.src, 7);
+        initEnemyAi(element, element.mutation);
+        drawAnim(element.x, element.y, 96, 96, element.src, 8);
         // Pseudo hitbox example of enemy \/
         /*ctx.beginPath();
         ctx.arc(element.x, element.y, 48, 0, 8)
@@ -360,25 +360,76 @@ const gameRendering = (): void => {
         element.y += element.speed;
         // Enemy arrived to it's destination
         if (element.y >= window.innerHeight) {
-            const index: number = enemies.indexOf(element);
-            enemies.splice(index, 1);
+            const index: number = enemiesLv1.indexOf(element);
+            enemiesLv1.splice(index, 1);
             // Don't count enemies who are out screen
             if (element.x > 0 && element.x < window.innerWidth) healthLeft--;
+        }
+        // If enemy collides with cursor
+        if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
+            creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4)
+            const index: number = enemiesLv1.indexOf(element);
+            enemiesLv1.splice(index, 1)
+        }
+        samuraiSkillPosArr.forEach((slashPos: Positions) => {
+            if (collision(slashPos, element) < 10 && !isSlowMotion) {
+                creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6)
+                const index: number = enemiesLv1.indexOf(element);
+                enemiesLv1.splice(index, 1);
             }
-            // If enemy collides with cursor
-            if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
-                creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4)
-                const index: number = enemies.indexOf(element);
-                enemies.splice(index, 1)
-            }
-            samuraiSkillPosArr.forEach((slashPos: Positions) => {
-                if (collision(slashPos, element) < 10 && !isSlowMotion) {
-                    creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6)
-                    const index: number = enemies.indexOf(element);
-                    enemies.splice(index, 1);
-                }
-            });
         });
+    });
+    if (interval % 368 === 24) {
+        // Defining every enemy of this type
+        const enemyLv2: Enemy = {
+            img: new Image(),
+            width: ENEMYLV1.width,
+            height: ENEMYLV1.height,
+            x: Math.floor((Math.random() * window.innerWidth + 50) - 25), // -n +n makes enemies don't appear outside or semi outside of screen
+            y: ENEMYLV1.y,
+            speed: ENEMYLV1.speed,
+            radius: ENEMYLV1.radius,
+            mutation: Math.floor(Math.random() * 4) + 1,
+            mutation2 : Math.floor(Math.random() * 4) + 1,
+            src: Math.floor(Math.random() * 2) + 1 === 1 ? ENEMYLV1.img : ENEMYLV1.img2
+        }
+        enemyLv2.img.src = ENEMYLV1.img;
+        enemiesLv2.push(enemyLv2);
+        console.log(enemiesLv2)
+        while(enemyLv2.mutation === enemyLv2.mutation2){
+            enemyLv2.mutation2 = Math.floor(Math.random() * 4) + 1;
+        }
+    }
+    enemiesLv2.forEach((element: Enemy) => {
+        const deathPosX: number = element.x;
+        const deathPosY: number = element.y;
+
+        // Apply logic to enemy
+        initEnemyAi(element, element.mutation)
+        initEnemyAi(element, element.mutation2)
+        element.y += element.speed;
+        // Enemy arrived to it's destination
+        if (element.y >= window.innerHeight) {
+            const index: number = enemiesLv2.indexOf(element);
+            enemiesLv2.splice(index, 1);
+            // Don't count enemies who are out screen
+            if (element.x > 0 && element.x < window.innerWidth) healthLeft--;
+        }
+        // If enemy collides with cursor
+        if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
+            creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4)
+            const index: number = enemiesLv2.indexOf(element);
+            enemiesLv2.splice(index, 1)
+        }
+        samuraiSkillPosArr.forEach((slashPos: Positions) => {
+            if (collision(slashPos, element) < 10 && !isSlowMotion) {
+                creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6)
+                const index: number = enemiesLv2.indexOf(element);
+                enemiesLv2.splice(index, 1);
+            }
+        });
+        drawAnim(element.x, element.y, 96, 96, 'https://i.postimg.cc/R0Bh6gwk/octopus.png', 4);
+    });
     /**
      * Sword trail
      */
