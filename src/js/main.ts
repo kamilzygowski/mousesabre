@@ -1,5 +1,7 @@
 import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
-import { collision, createGrid } from "./utils";
+import { bubbleSort, collision, createGrid } from "./utils";
+import { postHighscoreWindow } from './menu';
+import { data } from "./dbconnection";
 interface Cursor {
     img: HTMLImageElement;
     readonly width: number;
@@ -34,6 +36,7 @@ type Positions = {
 let canvas: any;
 let ctx: CanvasRenderingContext2D;
 let healthLeft: number = 20;
+let score: number = 0;
 let grid: Array<[]> = [];
 const enemiesLv1: Enemy[] = [];
 const enemiesLv2: Enemy[] = [];
@@ -103,7 +106,7 @@ export const initGameState = (): void => {
 const drawAnim = (x: number, y: number, width: number, height: number, src: string, framesNumber: number): void => {
     let image: HTMLImageElement = new Image();
     image.src = src;
-    const thisFrame: number = Math.round(interval % ((framesNumber-1) * 10) / 10)
+    const thisFrame: number = Math.round(interval % ((framesNumber - 1) * 10) / 10)
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 const gameOver = (): void => {
@@ -119,17 +122,29 @@ const gameOver = (): void => {
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
+
+    const arrOfScores: number[] = [];
+    data.forEach(element => {
+        arrOfScores.push(element.score)
+    })
     // On button click reload page to the first locationUrl (to the main menu)
     menuButton.addEventListener('click', (): void => {
         location.href = MAIN_URL;
     })
+    const sortedScores = bubbleSort(arrOfScores, false);
+    for (let i = 0; i < 5; i++) {
+        if (score > sortedScores[i]) {
+            postHighscoreWindow(score);
+            return;
+        }
+    }
 }
 const Ai_MoveAway = (player: Cursor, creature: Enemy, speed: number): void => {
     if (!isSlowMotion) {
         if (player.x > creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-            creature.x -= speed*3;
+            creature.x -= speed * 3;
         } else if (player.x < creature.x && Math.abs(player.x - creature.x) < 90 && creature.x < window.innerWidth - 60 && creature.x > 0) {
-            creature.x += speed*3;
+            creature.x += speed * 3;
         }
     }
 }
@@ -172,7 +187,7 @@ const Ai_Teleport = (player: Cursor, creature: Enemy): void => {
 const Ai_RushDown = (creature: Enemy, speed: number): void => {
     drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4)
     const argSpeedValue: number = speed;
-    if(creature.y > window.innerHeight * 0.45){
+    if (creature.y > window.innerHeight * 0.45) {
         if (isSlowMotion) {
             speed = 0.5;
         } else {
@@ -254,7 +269,7 @@ const creatureDeathAnim = (enemy: Enemy, animTimeSeconds: number): void => {
         clearInterval(render);
     }, animTimeSeconds * 1000);
 }
-const initEnemyAi = (element:Enemy, number: number):void  => {
+const initEnemyAi = (element: Enemy, number: number): void => {
     switch (number) {
         case 1: Ai_MoveAway(playerCursor, element, 5);
             break;
@@ -280,26 +295,26 @@ const gameRendering = (): void => {
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5)
     ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
+    ctx.fillText(` Score: ${score}`, window.innerWidth - 350, 50 + 48);
     // Setup animations on every position change
     onmousemove = (e: MouseEvent): void => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgWest;
             trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
-            trailPosX = -38.5;
+            trailPosX = 15.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
         } else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgEast;
             trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
-            trailPosX = 100.5;
+            trailPosX = -41.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
         } else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgNorth;
             trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
-            trailPosX = -16;
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
@@ -322,14 +337,17 @@ const gameRendering = (): void => {
     }
     interval++;
     // Set enemies spawn speed by a certain amount of time
-    if (interval / 1000 > 0) {
+    if (interval / 1000 > 0 && interval / 1000 < 1) {
         spawnRate = spawnRateStages[3];
-    } else if (interval / 1000 > 2) {
-        spawnRate = spawnRateStages[2];
-    } else if (interval / 1000 > 4) {
-        spawnRate = spawnRateStages[3];
-    } else if (interval / 1000 > 6) {
+    } else if (interval / 1000 > 1 && interval / 1000 < 2) {
+        spawnRate = spawnRateStages[4];
+        console.log('Waves are on level 2')
+    } else if (interval / 1000 > 2 && interval / 1000 < 3) {
+        spawnRate = spawnRateStages[5];
+        console.log('Waves are on level 3')
+    } else if (interval / 1000 > 3 && interval / 1000 < 4) {
         spawnRate = spawnRateStages[6];
+        console.log('Waves are on level 4')
     }
     if (interval % spawnRate === 3) {
         // Defining every enemy of this type
@@ -370,12 +388,14 @@ const gameRendering = (): void => {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4)
             const index: number = enemiesLv1.indexOf(element);
             enemiesLv1.splice(index, 1)
+            score += 50;
         }
         samuraiSkillPosArr.forEach((slashPos: Positions) => {
             if (collision(slashPos, element) < 10 && !isSlowMotion) {
                 creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6)
                 const index: number = enemiesLv1.indexOf(element);
                 enemiesLv1.splice(index, 1);
+                score += 50;
             }
         });
     });
@@ -390,13 +410,12 @@ const gameRendering = (): void => {
             speed: ENEMYLV1.speed,
             radius: ENEMYLV1.radius,
             mutation: Math.floor(Math.random() * 4) + 1,
-            mutation2 : Math.floor(Math.random() * 4) + 1,
+            mutation2: Math.floor(Math.random() * 4) + 1,
             src: Math.floor(Math.random() * 2) + 1 === 1 ? ENEMYLV1.img : ENEMYLV1.img2
         }
         enemyLv2.img.src = ENEMYLV1.img;
         enemiesLv2.push(enemyLv2);
-        console.log(enemiesLv2)
-        while(enemyLv2.mutation === enemyLv2.mutation2){
+        while (enemyLv2.mutation === enemyLv2.mutation2) {
             enemyLv2.mutation2 = Math.floor(Math.random() * 4) + 1;
         }
     }
@@ -420,12 +439,14 @@ const gameRendering = (): void => {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4)
             const index: number = enemiesLv2.indexOf(element);
             enemiesLv2.splice(index, 1)
+            score += 50;
         }
         samuraiSkillPosArr.forEach((slashPos: Positions) => {
             if (collision(slashPos, element) < 10 && !isSlowMotion) {
                 creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6)
                 const index: number = enemiesLv2.indexOf(element);
                 enemiesLv2.splice(index, 1);
+                score += 50;
             }
         });
         drawAnim(element.x, element.y, 96, 96, 'https://i.postimg.cc/R0Bh6gwk/octopus.png', 4);
@@ -434,7 +455,7 @@ const gameRendering = (): void => {
      * Sword trail
      */
     const trail: Trail = {
-        x: playerCursor.x,
+        x: playerCursor.x + 25 + trailPosX,
         y: playerCursor.y,
         width: TRAIL.width,
         height: TRAIL.height,
@@ -469,7 +490,7 @@ const gameRendering = (): void => {
         }
     })
     // Drawn anim on top of the sword + prevent to render anim on slowMotion
-    !isSlowMotion ? drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7) : null;
+    //!isSlowMotion ? drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7) : null;
 
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);

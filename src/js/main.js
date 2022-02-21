@@ -1,8 +1,11 @@
 import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_AI_TELEPORT, HPIMG, PLAYER, TAILS_BOTTOM, TAILS_SIDE, TRAIL } from "./constants";
-import { collision, createGrid } from "./utils";
+import { bubbleSort, collision, createGrid } from "./utils";
+import { postHighscoreWindow } from './menu';
+import { data } from "./dbconnection";
 let canvas;
 let ctx;
 let healthLeft = 20;
+let score = 0;
 let grid = [];
 const enemiesLv1 = [];
 const enemiesLv2 = [];
@@ -76,9 +79,20 @@ const gameOver = () => {
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
+    const arrOfScores = [];
+    data.forEach(element => {
+        arrOfScores.push(element.score);
+    });
     menuButton.addEventListener('click', () => {
         location.href = MAIN_URL;
     });
+    const sortedScores = bubbleSort(arrOfScores, false);
+    for (let i = 0; i < 5; i++) {
+        if (score > sortedScores[i]) {
+            postHighscoreWindow(score);
+            return;
+        }
+    }
 };
 const Ai_MoveAway = (player, creature, speed) => {
     if (!isSlowMotion) {
@@ -234,11 +248,12 @@ const gameRendering = () => {
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5);
     ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
+    ctx.fillText(` Score: ${score}`, window.innerWidth - 350, 50 + 48);
     onmousemove = (e) => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgWest;
             trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
-            trailPosX = -38.5;
+            trailPosX = 15.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
@@ -246,7 +261,7 @@ const gameRendering = () => {
         else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgEast;
             trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
-            trailPosX = 100.5;
+            trailPosX = -41.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
@@ -254,7 +269,6 @@ const gameRendering = () => {
         else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgNorth;
             trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
-            trailPosX = -16;
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
@@ -273,17 +287,20 @@ const gameRendering = () => {
         }
     };
     interval++;
-    if (interval / 1000 > 0) {
+    if (interval / 1000 > 0 && interval / 1000 < 1) {
         spawnRate = spawnRateStages[3];
     }
-    else if (interval / 1000 > 2) {
-        spawnRate = spawnRateStages[2];
+    else if (interval / 1000 > 1 && interval / 1000 < 2) {
+        spawnRate = spawnRateStages[4];
+        console.log('Waves are on level 2');
     }
-    else if (interval / 1000 > 4) {
-        spawnRate = spawnRateStages[3];
+    else if (interval / 1000 > 2 && interval / 1000 < 3) {
+        spawnRate = spawnRateStages[5];
+        console.log('Waves are on level 3');
     }
-    else if (interval / 1000 > 6) {
+    else if (interval / 1000 > 3 && interval / 1000 < 4) {
         spawnRate = spawnRateStages[6];
+        console.log('Waves are on level 4');
     }
     if (interval % spawnRate === 3) {
         const enemyLv1 = {
@@ -316,12 +333,14 @@ const gameRendering = () => {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4);
             const index = enemiesLv1.indexOf(element);
             enemiesLv1.splice(index, 1);
+            score += 50;
         }
         samuraiSkillPosArr.forEach((slashPos) => {
             if (collision(slashPos, element) < 10 && !isSlowMotion) {
                 creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6);
                 const index = enemiesLv1.indexOf(element);
                 enemiesLv1.splice(index, 1);
+                score += 50;
             }
         });
     });
@@ -340,7 +359,6 @@ const gameRendering = () => {
         };
         enemyLv2.img.src = ENEMYLV1.img;
         enemiesLv2.push(enemyLv2);
-        console.log(enemiesLv2);
         while (enemyLv2.mutation === enemyLv2.mutation2) {
             enemyLv2.mutation2 = Math.floor(Math.random() * 4) + 1;
         }
@@ -361,18 +379,20 @@ const gameRendering = () => {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4);
             const index = enemiesLv2.indexOf(element);
             enemiesLv2.splice(index, 1);
+            score += 50;
         }
         samuraiSkillPosArr.forEach((slashPos) => {
             if (collision(slashPos, element) < 10 && !isSlowMotion) {
                 creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.6);
                 const index = enemiesLv2.indexOf(element);
                 enemiesLv2.splice(index, 1);
+                score += 50;
             }
         });
         drawAnim(element.x, element.y, 96, 96, 'https://i.postimg.cc/R0Bh6gwk/octopus.png', 4);
     });
     const trail = {
-        x: playerCursor.x,
+        x: playerCursor.x + 25 + trailPosX,
         y: playerCursor.y,
         width: TRAIL.width,
         height: TRAIL.height,
@@ -407,7 +427,6 @@ const gameRendering = () => {
             trailsArray.splice(index, 1);
         }
     });
-    !isSlowMotion ? drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7) : null;
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
     ctx.strokeStyle = '#03045e';
 };

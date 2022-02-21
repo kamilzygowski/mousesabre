@@ -50,6 +50,7 @@
     "url": "git@github.com:taniarascia/webpack-boilerplate"
   },
   "dependencies": {
+    "axios": "^0.26.0",
     "gh-pages": "^3.2.3"
   }
 }
