@@ -2,21 +2,23 @@ import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_A
 import { bubbleSort, collision, createGrid } from "./utils";
 import { postHighscoreWindow } from './menu';
 import { data } from "./dbconnection";
-interface Cursor {
+import { boss_LadyBug, ladyBug } from "./bosses";
+export interface Cursor {
     img: HTMLImageElement;
+    hp: number;
     readonly width: number;
     readonly height: number;
     x?: number;
     y?: number;
 }
 interface Enemy {
-    img: HTMLImageElement;
-    width: number;
-    height: number;
+    img?: HTMLImageElement;
+    width?: number;
+    height?: number;
     x: number;
     y: number;
-    speed: number;
-    radius: number;
+    speed?: number;
+    radius?: number;
     mutation?: number;
     mutation2?: number;
     src?: string;
@@ -35,7 +37,6 @@ type Positions = {
 // VERY IMPORTANT VARIABLES
 let canvas: any;
 let ctx: CanvasRenderingContext2D;
-let healthLeft: number = 20;
 let score: number = 0;
 let grid: Array<[]> = [];
 const enemiesLv1: Enemy[] = [];
@@ -51,7 +52,6 @@ const bottomTile: HTMLImageElement = new Image();
 bottomTile.src = TAILS_BOTTOM;
 const backgroundTile: HTMLImageElement = new Image();
 backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
-let trailImg: string = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
 let trailPosX: number, trailPosY: number, trailWidth: number, trailHeight: number;
 const trailLeftBehind: HTMLImageElement = new Image();
 trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
@@ -73,6 +73,7 @@ let spawnRate: number = 1;
 // Create a data instance for our player
 const playerCursor: Cursor = {
     img: new Image(),
+    hp: 20000,
     width: 40,
     height: 40,
     // x and y basic state is -100 to not render image on canvas at the game start
@@ -95,6 +96,7 @@ export const initGameState = (): void => {
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
     background.src = BACKGROUND;
+    createGrid(32, grid);
     // IN GAME EVENT LISTENERS
     // Attach right mouse click skill
     canvas.addEventListener('contextmenu', (e: MouseEvent): void => {
@@ -281,40 +283,44 @@ const initEnemyAi = (element: Enemy, number: number): void => {
             break;
     }
 }
+export const drawBossHealtBar = (currentHp: number, maxHp: number): void => {
+    ctx.beginPath()
+    ctx.fillStyle = 'rgba(0,0,0, 0.35)';
+    ctx.fillRect(window.innerWidth / 5, 100, (window.innerWidth * 3 / 5), 25);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(window.innerWidth / 5, 100, (window.innerWidth * 3 / 5) * currentHp / maxHp, 25);
+}
 /*****************************************************
 CANVAS RENDERING
  *****************************************************/
 const gameRendering = (): void => {
     nextFrameBegin();
     paintGrid(32);
-    if (healthLeft < 1) {
+    if (playerCursor.hp < 1) {
         gameOver();
     }
     // Interface player health info
     ctx.fillStyle = '#b71540';
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5)
-    ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
+    ctx.fillText(` x ${playerCursor.hp}`, 50 + 64, 50 + 48);
     ctx.fillText(` Score: ${score}`, window.innerWidth - 350, 50 + 48);
     // Setup animations on every position change
     onmousemove = (e: MouseEvent): void => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgWest;
-            trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
             trailPosX = 15.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
         } else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgEast;
-            trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
             trailPosX = -41.5;
             trailPosY = 30;
             trailWidth = 85;
             trailHeight = 20;
         } else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgNorth;
-            trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
@@ -337,18 +343,28 @@ const gameRendering = (): void => {
     }
     interval++;
     // Set enemies spawn speed by a certain amount of time
+    // interval / 1000 means changing state every __16sec__ 
     if (interval / 1000 > 0 && interval / 1000 < 1) {
         spawnRate = spawnRateStages[3];
     } else if (interval / 1000 > 1 && interval / 1000 < 2) {
         spawnRate = spawnRateStages[4];
-        console.log('Waves are on level 2')
+        console.log('Waves are on level 2');
     } else if (interval / 1000 > 2 && interval / 1000 < 3) {
         spawnRate = spawnRateStages[5];
-        console.log('Waves are on level 3')
+        console.log('Waves are on level 3');
     } else if (interval / 1000 > 3 && interval / 1000 < 4) {
-        spawnRate = spawnRateStages[6];
-        console.log('Waves are on level 4')
-    }
+        spawnRate = spawnRateStages[5];
+        console.log('Waves are on level 4');
+    } else if (interval / 1000 > 4 && ladyBug.isDead === null && interval / 1000 < 4.3) {
+        ladyBug.isDead = false;
+    } else if (interval / 1000 > 4.3 && ladyBug.isDead===false) {
+        spawnRate = 0;
+        console.log('Waves are on level 5 - Boss wave');
+    } else if (interval / 1000 > 5 && ladyBug.isDead === true) {
+        spawnRate = spawnRateStages[5];
+        console.log('Waves are on level 6 after boss wave');
+    } 
+
     if (interval % spawnRate === 3) {
         // Defining every enemy of this type
         const enemyLv1: Enemy = {
@@ -381,7 +397,7 @@ const gameRendering = (): void => {
             const index: number = enemiesLv1.indexOf(element);
             enemiesLv1.splice(index, 1);
             // Don't count enemies who are out screen
-            if (element.x > 0 && element.x < window.innerWidth) healthLeft--;
+            if (element.x > 0 && element.x < window.innerWidth) playerCursor.hp--;
         }
         // If enemy collides with cursor
         if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
@@ -399,7 +415,7 @@ const gameRendering = (): void => {
             }
         });
     });
-    if (interval % 368 === 24) {
+    if (interval % spawnRate / 3 === 24) {
         // Defining every enemy of this type
         const enemyLv2: Enemy = {
             img: new Image(),
@@ -432,7 +448,7 @@ const gameRendering = (): void => {
             const index: number = enemiesLv2.indexOf(element);
             enemiesLv2.splice(index, 1);
             // Don't count enemies who are out screen
-            if (element.x > 0 && element.x < window.innerWidth) healthLeft--;
+            if (element.x > 0 && element.x < window.innerWidth) playerCursor.hp--;
         }
         // If enemy collides with cursor
         if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
@@ -451,6 +467,10 @@ const gameRendering = (): void => {
         });
         drawAnim(element.x, element.y, 96, 96, 'https://i.postimg.cc/R0Bh6gwk/octopus.png', 4);
     });
+    /**
+     * Bosses
+     */
+    ladyBug.isDead === false ? boss_LadyBug(interval, ctx, playerCursor) : null;
     /**
      * Sword trail
      */
@@ -491,7 +511,6 @@ const gameRendering = (): void => {
     })
     // Drawn anim on top of the sword + prevent to render anim on slowMotion
     //!isSlowMotion ? drawAnim(trail.x - trailPosX, trail.y - trailPosY, trailWidth, trailHeight, trailImg, 7) : null;
-
     // Drawing player
     ctx.drawImage(playerCursor.img, playerCursor.x - playerCursor.width / 2, playerCursor.y - playerCursor.height / 2);
     ctx.strokeStyle = '#03045e';
@@ -499,5 +518,3 @@ const gameRendering = (): void => {
 let gameRender: NodeJS.Timer = setInterval(() => {
     ctx ? gameRendering() : null;
 }, 1000 / 60)
-// init Grid
-createGrid(32, grid);

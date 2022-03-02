@@ -8,6 +8,7 @@ export interface Highscores {
     score: number;
 }
 const container = document.body;
+let areHighscoresVisible: boolean = false;
 // <html>
 // <body>
 const title: string = 'Mouse Sabre';
@@ -37,11 +38,21 @@ const li6: HTMLElement = document.createElement('li');
 
 // </body>
 // </html>
+const errorMsg:HTMLHeadElement = document.createElement('h3');
+errorMsg.textContent = 'Your screen is too small :(';
+errorMsg.style.color = 'red';
+errorMsg.style.fontSize = '43px';
+
 startButtonTag.addEventListener('click', (): void => {
+    if(window.innerWidth <= 900){
+        document.body.appendChild(errorMsg);
+        return;
+    }
     fakeHistoryBack(window, location);
     initGameState();
 })
 setTimeout(() => {
+    data !== undefined ? areHighscoresVisible : !areHighscoresVisible;
     bubbleSortCustom(data, false)
     li.textContent = 'HIGHSCORES';
     li2.textContent = `${data[0].name} - ${data[0].score} pkt`;
@@ -77,7 +88,7 @@ export const postHighscoreWindow = (score: number): void => {
     highscoresWindow.appendChild(submitButton);
 
     submitButton.addEventListener('click', (): void => {
-        if (regex.test(nicknameInput.value)) {
+        if (regex.test(nicknameInput.value) && areHighscoresVisible) {
             postData({ id: data ? data.length : Math.floor(Math.random() * 300), name: nicknameInput.value, score: score })
             highscoresWindow.remove();
         } else if (!regex.test(nicknameInput.value)) {

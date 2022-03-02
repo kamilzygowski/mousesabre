@@ -66,7 +66,7 @@ export const bubbleSort = (arr: number[], growing: boolean): number[] => {
   return arr;
 }
 export const bubbleSortCustom = (arr: Highscores[], growing: boolean): Highscores[] => {
-  if(arr === undefined) setTimeout(() => window.location.reload(), 750);
+  //if(arr === undefined) setTimeout(() => window.location.reload(), 750);
   //Outer pass
   for (let i = 0; i < arr.length; i++) {
     //Inner pass

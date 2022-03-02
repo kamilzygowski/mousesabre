@@ -2,9 +2,9 @@ import { BACKGROUND, BACKGROUND_SLOWMOTION, ENEMYLV1, ENEMY_AI_RUSHDOWN, ENEMY_A
 import { bubbleSort, collision, createGrid } from "./utils";
 import { postHighscoreWindow } from './menu';
 import { data } from "./dbconnection";
+import { boss_LadyBug, ladyBug } from "./bosses";
 let canvas;
 let ctx;
-let healthLeft = 20;
 let score = 0;
 let grid = [];
 const enemiesLv1 = [];
@@ -19,7 +19,6 @@ const bottomTile = new Image();
 bottomTile.src = TAILS_BOTTOM;
 const backgroundTile = new Image();
 backgroundTile.src = 'https://i.postimg.cc/VNpQPw38/bckg.png';
-let trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
 let trailPosX, trailPosY, trailWidth, trailHeight;
 const trailLeftBehind = new Image();
 trailLeftBehind.src = 'https://i.postimg.cc/C1KJC87K/TEST20-X20circle.png';
@@ -39,6 +38,7 @@ const spawnRateStages = [
 let spawnRate = 1;
 const playerCursor = {
     img: new Image(),
+    hp: 20000,
     width: 40,
     height: 40,
     x: -100,
@@ -55,6 +55,7 @@ export const initGameState = () => {
     canvas.width = window.innerWidth - 5;
     canvas.height = window.innerHeight - 5;
     background.src = BACKGROUND;
+    createGrid(32, grid);
     canvas.addEventListener('contextmenu', (e) => {
         playerSkill_SamuraiSlash();
         e.preventDefault();
@@ -238,21 +239,27 @@ const initEnemyAi = (element, number) => {
             break;
     }
 };
+export const drawBossHealtBar = (currentHp, maxHp) => {
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(0,0,0, 0.35)';
+    ctx.fillRect(window.innerWidth / 5, 100, (window.innerWidth * 3 / 5), 25);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(window.innerWidth / 5, 100, (window.innerWidth * 3 / 5) * currentHp / maxHp, 25);
+};
 const gameRendering = () => {
     nextFrameBegin();
     paintGrid(32);
-    if (healthLeft < 1) {
+    if (playerCursor.hp < 1) {
         gameOver();
     }
     ctx.fillStyle = '#b71540';
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5);
-    ctx.fillText(` x ${healthLeft}`, 50 + 64, 50 + 48);
+    ctx.fillText(` x ${playerCursor.hp}`, 50 + 64, 50 + 48);
     ctx.fillText(` Score: ${score}`, window.innerWidth - 350, 50 + 48);
     onmousemove = (e) => {
         if (e.clientX < previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgWest;
-            trailImg = 'https://i.postimg.cc/GmCTYmVV/blue-Trail-Left.png';
             trailPosX = 15.5;
             trailPosY = 30;
             trailWidth = 85;
@@ -260,7 +267,6 @@ const gameRendering = () => {
         }
         else if (e.clientX > previousPlayerX && e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgEast;
-            trailImg = 'https://i.postimg.cc/QdJ9qrrt/blue-Trail-Right.png';
             trailPosX = -41.5;
             trailPosY = 30;
             trailWidth = 85;
@@ -268,7 +274,6 @@ const gameRendering = () => {
         }
         else if (e.clientY != previousPlayerY) {
             playerCursor.img.src = PLAYER.imgNorth;
-            trailImg = 'https://i.postimg.cc/NMQXwzGF/blue-Trail8.png';
             trailPosY = 50;
             trailWidth = 20;
             trailHeight = 53;
@@ -299,8 +304,19 @@ const gameRendering = () => {
         console.log('Waves are on level 3');
     }
     else if (interval / 1000 > 3 && interval / 1000 < 4) {
-        spawnRate = spawnRateStages[6];
+        spawnRate = spawnRateStages[5];
         console.log('Waves are on level 4');
+    }
+    else if (interval / 1000 > 4 && ladyBug.isDead === null && interval / 1000 < 4.3) {
+        ladyBug.isDead = false;
+    }
+    else if (interval / 1000 > 4.3 && ladyBug.isDead === false) {
+        spawnRate = 0;
+        console.log('Waves are on level 5 - Boss wave');
+    }
+    else if (interval / 1000 > 5 && ladyBug.isDead === true) {
+        spawnRate = spawnRateStages[5];
+        console.log('Waves are on level 6 after boss wave');
     }
     if (interval % spawnRate === 3) {
         const enemyLv1 = {
@@ -327,7 +343,7 @@ const gameRendering = () => {
             const index = enemiesLv1.indexOf(element);
             enemiesLv1.splice(index, 1);
             if (element.x > 0 && element.x < window.innerWidth)
-                healthLeft--;
+                playerCursor.hp--;
         }
         if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4);
@@ -344,7 +360,7 @@ const gameRendering = () => {
             }
         });
     });
-    if (interval % 368 === 24) {
+    if (interval % spawnRate / 3 === 24) {
         const enemyLv2 = {
             img: new Image(),
             width: ENEMYLV1.width,
@@ -373,7 +389,7 @@ const gameRendering = () => {
             const index = enemiesLv2.indexOf(element);
             enemiesLv2.splice(index, 1);
             if (element.x > 0 && element.x < window.innerWidth)
-                healthLeft--;
+                playerCursor.hp--;
         }
         if (collision(playerCursor, element) <= element.radius / 2 && !isSlowMotion) {
             creatureDeathAnim({ x: deathPosX, y: deathPosY }, 0.4);
@@ -391,6 +407,7 @@ const gameRendering = () => {
         });
         drawAnim(element.x, element.y, 96, 96, 'https://i.postimg.cc/R0Bh6gwk/octopus.png', 4);
     });
+    ladyBug.isDead === false ? boss_LadyBug(interval, ctx, playerCursor) : null;
     const trail = {
         x: playerCursor.x + 25 + trailPosX,
         y: playerCursor.y,
@@ -433,4 +450,3 @@ const gameRendering = () => {
 let gameRender = setInterval(() => {
     ctx ? gameRendering() : null;
 }, 1000 / 60);
-createGrid(32, grid);
