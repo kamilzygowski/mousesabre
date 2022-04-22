@@ -187,7 +187,7 @@ const Ai_Teleport = (player: Cursor, creature: Enemy): void => {
     }
 }
 const Ai_RushDown = (creature: Enemy, speed: number): void => {
-    drawAnim(creature.x, creature.y - 160, 128, 256, ENEMY_AI_RUSHDOWN, 4)
+    drawAnim(creature.x, creature.y - 65, 98, 130, ENEMY_AI_RUSHDOWN, 4)
     const argSpeedValue: number = speed;
     if (creature.y > window.innerHeight * 0.45) {
         if (isSlowMotion) {
@@ -300,7 +300,7 @@ const gameRendering = (): void => {
         gameOver();
     }
     // Interface player health info
-    ctx.fillStyle = '#b71540';
+    ctx.fillStyle = '#130f40';
     ctx.font = 'normal small-caps bold 48px rakkas';
     drawAnim(50, 50, 64, 64, HPIMG, 5)
     ctx.fillText(` x ${playerCursor.hp}`, 50 + 64, 50 + 48);

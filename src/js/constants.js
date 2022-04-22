@@ -18,10 +18,10 @@ export const ENEMYLV1 = {
     speed: 3.5,
     radius: 190,
 };
-export const BACKGROUND = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
-export const BACKGROUND_SLOWMOTION = 'https://i.postimg.cc/h4Ys1tTc/tile-Background-Darker-Version.png';
+export const BACKGROUND = 'https://i.postimg.cc/nzgtyBrb/Non-Parallax.png';
+export const BACKGROUND_SLOWMOTION = 'https://i.postimg.cc/tJGDL43C/Non-Parallax-Dark.png';
 export const HPIMG = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
-export const ENEMY_AI_RUSHDOWN = 'https://i.postimg.cc/pXVV7Hhy/rushdown.png';
+export const ENEMY_AI_RUSHDOWN = 'https://i.postimg.cc/Qd4LmYxc/fire-Sprite-Sheet-VERYSMALL.png';
 export const ENEMY_AI_TELEPORT = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
 export const TAILS_BOTTOM = 'https://i.postimg.cc/gk7R3ZWH/bottom-Tile.png';
 export const TAILS_SIDE = 'https://i.postimg.cc/G3ZSzHdd/sideTile.png';

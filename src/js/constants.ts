@@ -19,14 +19,14 @@ export const ENEMYLV1 = {
     radius: 190,
 }
 // Canvas background
-export const BACKGROUND:string = 'https://i.postimg.cc/j27tW2Yv/tile-Background.png';
-export const BACKGROUND_SLOWMOTION: string = 'https://i.postimg.cc/h4Ys1tTc/tile-Background-Darker-Version.png';
+export const BACKGROUND:string = 'https://i.postimg.cc/nzgtyBrb/Non-Parallax.png';
+export const BACKGROUND_SLOWMOTION: string = 'https://i.postimg.cc/tJGDL43C/Non-Parallax-Dark.png';
 // User Interface
 export const HPIMG:string = 'https://i.postimg.cc/2Swnd2fZ/heart.png';
 /**
  * Enemy Ai Animations/Imgs
  */
-export const ENEMY_AI_RUSHDOWN:string = 'https://i.postimg.cc/pXVV7Hhy/rushdown.png';
+export const ENEMY_AI_RUSHDOWN:string = 'https://i.postimg.cc/Qd4LmYxc/fire-Sprite-Sheet-VERYSMALL.png';
 export const ENEMY_AI_TELEPORT:string = 'https://i.postimg.cc/fL73C721/teleporx128t.png';
 /**
  * Tails
