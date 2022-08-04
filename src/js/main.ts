@@ -37,6 +37,7 @@ type Positions = {
 // VERY IMPORTANT VARIABLES
 let canvas: any;
 let ctx: CanvasRenderingContext2D;
+let gameOverHTMLState: any;
 let score: number = 0;
 let grid: Array<[]> = [];
 const enemiesLv1: Enemy[] = [];
@@ -73,7 +74,7 @@ let spawnRate: number = 1;
 // Create a data instance for our player
 const playerCursor: Cursor = {
     img: new Image(),
-    hp: 20000,
+    hp: 25,
     width: 40,
     height: 40,
     // x and y basic state is -100 to not render image on canvas at the game start
@@ -112,7 +113,9 @@ const drawAnim = (x: number, y: number, width: number, height: number, src: stri
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 }
 const gameOver = (): void => {
+    gameOverHTMLState = document.body.innerHTML;
     clearInterval(gameRender);
+    console.log(gameOverHTMLState)
     document.body.classList.remove('hideCursor');
     document.body.innerHTML = '';
     const gameOverTag: HTMLElement = document.createElement('h1');
@@ -124,14 +127,43 @@ const gameOver = (): void => {
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
+    const replayButton: HTMLButtonElement = document.createElement('button');
+    replayButton.textContent = 'Replay';
+    replayButton.classList.add('replayButton');
+    document.body.appendChild(replayButton);
 
     const arrOfScores: number[] = [];
-    data.forEach(element => {
+    data !== undefined ? data.forEach(element => {
         arrOfScores.push(element.score)
-    })
+    }) : null;
     // On button click reload page to the first locationUrl (to the main menu)
     menuButton.addEventListener('click', (): void => {
         location.href = MAIN_URL;
+    })
+    replayButton.addEventListener('click', (): void => {
+        clearInterval(gameRender);
+      //  document.body.innerHTML = gameOverHTMLState;
+      document.body.innerHTML = '';
+        document.body.classList.add('hideCursor');
+        const canv = document.createElement('canvas');
+        document.body.appendChild(canv)
+        ctx = canv.getContext('2d');
+        canv.id = 'canvas';
+      
+        canv.width = window.innerWidth - 5;
+    canv.height = window.innerHeight - 5;
+    background.src = BACKGROUND;
+    createGrid(32, grid);
+    // IN GAME EVENT LISTENERS
+    // Attach right mouse click skill
+    canv.addEventListener('contextmenu', (e: MouseEvent): void => {
+        playerSkill_SamuraiSlash();
+        // This is on last position because we don't want browser option menu to pop up and if preventDefault() is on the beggining of func -> it doesn't work then
+        e.preventDefault();
+    })
+        setInterval(() => {
+            ctx ? gameRendering() : null;
+        }, 1000 / 60)
     })
     const sortedScores = bubbleSort(arrOfScores, false);
     for (let i = 0; i < 5; i++) {
@@ -346,6 +378,7 @@ const gameRendering = (): void => {
     // interval / 1000 means changing state every __16sec__ 
     if (interval / 1000 > 0 && interval / 1000 < 1) {
         spawnRate = spawnRateStages[3];
+       
     } else if (interval / 1000 > 1 && interval / 1000 < 2) {
         spawnRate = spawnRateStages[4];
         console.log('Waves are on level 2');

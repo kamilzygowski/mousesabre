@@ -5,6 +5,7 @@ import { data } from "./dbconnection";
 import { boss_LadyBug, ladyBug } from "./bosses";
 let canvas;
 let ctx;
+let gameOverHTMLState;
 let score = 0;
 let grid = [];
 const enemiesLv1 = [];
@@ -38,7 +39,7 @@ const spawnRateStages = [
 let spawnRate = 1;
 const playerCursor = {
     img: new Image(),
-    hp: 20000,
+    hp: 25,
     width: 40,
     height: 40,
     x: -100,
@@ -68,7 +69,9 @@ const drawAnim = (x, y, width, height, src, framesNumber) => {
     ctx.drawImage(image, width * thisFrame, 0, width, height, x, y, width, height);
 };
 const gameOver = () => {
+    gameOverHTMLState = document.body.innerHTML;
     clearInterval(gameRender);
+    console.log(gameOverHTMLState);
     document.body.classList.remove('hideCursor');
     document.body.innerHTML = '';
     const gameOverTag = document.createElement('h1');
@@ -80,12 +83,36 @@ const gameOver = () => {
     menuButton.textContent = 'Main Menu';
     menuButton.classList.add('menuButton');
     document.body.appendChild(menuButton);
+    const replayButton = document.createElement('button');
+    replayButton.textContent = 'Replay';
+    replayButton.classList.add('replayButton');
+    document.body.appendChild(replayButton);
     const arrOfScores = [];
-    data.forEach(element => {
+    data !== undefined ? data.forEach(element => {
         arrOfScores.push(element.score);
-    });
+    }) : null;
     menuButton.addEventListener('click', () => {
         location.href = MAIN_URL;
+    });
+    replayButton.addEventListener('click', () => {
+        clearInterval(gameRender);
+        document.body.innerHTML = '';
+        document.body.classList.add('hideCursor');
+        const canv = document.createElement('canvas');
+        document.body.appendChild(canv);
+        ctx = canv.getContext('2d');
+        canv.id = 'canvas';
+        canv.width = window.innerWidth - 5;
+        canv.height = window.innerHeight - 5;
+        background.src = BACKGROUND;
+        createGrid(32, grid);
+        canv.addEventListener('contextmenu', (e) => {
+            playerSkill_SamuraiSlash();
+            e.preventDefault();
+        });
+        setInterval(() => {
+            ctx ? gameRendering() : null;
+        }, 1000 / 60);
     });
     const sortedScores = bubbleSort(arrOfScores, false);
     for (let i = 0; i < 5; i++) {

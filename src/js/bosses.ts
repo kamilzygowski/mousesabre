@@ -36,6 +36,23 @@ export const ladyBug: Boss = {
     weakPoints: [],
     shots:[]
 }
+const bossTimeWraithImg = new Image();
+bossTimeWraithImg.src = '';
+export const timeWraith: Boss = {
+    hp:800,
+    maxHp:800,
+    x: window.innerWidth/2,
+    y: window.innerHeight/2,
+    width:769,
+    height: 600,
+    isDead: null,
+    weakPoints: [],
+    shots:[]
+}
+
+export const boss_TimeWraith = (interval: number, ctx: CanvasRenderingContext2D, playerCursor: Cursor): void => {
+
+}
 
 export const boss_LadyBug = (interval: number, ctx: CanvasRenderingContext2D, playerCursor: Cursor): void => {
     ctx.drawImage(bossLadyBugImg, ladyBug.x - ladyBug.width / 2, ladyBug.y - ladyBug.height / 2);
